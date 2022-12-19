@@ -1,0 +1,740 @@
+name: onCodeChanges
+
+on: 
+    push:
+        branches:
+            - master
+#        paths:
+#            - 'dockerfile_images/**'
+    repository_dispatch:
+        types: [repository_trigger,robotology_trigger, cron_trigger]
+
+jobs:
+
+    check_files:
+      runs-on: [self-hosted, code]
+      steps: 
+      - id: file_changes
+        if: github.event_name == 'push'
+        uses: trilom/file-changes-action@v1.2.3
+      - name: files
+        if: github.event_name == 'push'
+        id: check-modifications
+        run: |
+          cat $HOME/files.json
+          cat $HOME/files_modified.json
+          cat $HOME/files_added.json
+          echo '${{ steps.file_changes.outputs.files}}'
+          echo '${{ steps.file_changes.outputs.files_modified}}'
+          echo '${{ steps.file_changes.outputs.files_added}}'
+      - uses: actions/checkout@v2
+      - name: find app name
+        id: set-matrix
+        run: |
+          if [[ "${{github.event_name}}" == "push" ]]
+          then 
+            parsed_list=($(echo '${{ steps.file_changes.outputs.files}}' | tr ',' '\n'))    
+          elif [ "${{ github.event.client_payload.type }}" == "repository_trigger" ] || [ "${{ github.event.client_payload.type }}" == "cron_trigger" ]
+          then
+            image_list="\"$(echo ${{ github.event.client_payload.img_list }} > temp.tmp && sed -i 's/ /" "/g' temp.tmp && cat temp.tmp)\""
+            image_list=( $image_list )
+            iter_parsed_list=0
+            for _image in "${image_list[@]}"
+            do
+                folders=( $(ls dockerfile_images/ | tr '\n' ' ' ) )
+                for i in "${folders[@]}"
+                do
+                    subfolders=( $(ls dockerfile_images/$i/ | tr '\n' ' ' ) )
+                    for j in "${subfolders[@]}"
+                    do
+                        _image2="$(echo "$_image" | awk -F'"' '{print $2}')"
+                        if [ "$j" == "$_image2" ]
+                        then
+                            if [ $iter_parsed_list == 0 ]
+                            then
+                                parsed_list="dockerfile_images/$i/$j/"
+                                iter_parsed_list=$((iter_parsed_list+1))  
+                            else
+                                parsed_list="$parsed_list dockerfile_images/$i/$j/"
+                            fi
+                        fi
+                    done
+                done
+            done
+            parsed_list=( $parsed_list )
+          elif [ "${{ github.event.client_payload.type }}" == "robotology_trigger" ]
+          then
+            echo "Payload from robotology: ${{ github.event.client_payload.paths }}"
+            path_list=($(echo "${{ github.event.client_payload.paths }}"))
+            iter_parsed_list=0
+            for each_path in "${path_list[@]}"
+            do
+              while read -r line
+              do
+                repo_folder=$(echo "$line" | awk -F' ' '{print $1}')
+                if [[ $each_path == $repo_folder ]]
+                then 
+                  demo_folder=$(echo "$line" | awk -F' ' '{print $2}')
+                  echo "Found directory $demo_folder in conf.ini"
+                  if [ $iter_parsed_list == 0 ]
+                  then
+                      parsed_list="dockerfile_images/$demo_folder/"
+                      iter_parsed_list=$((iter_parsed_list+1))  
+                  else
+                      parsed_list="$parsed_list dockerfile_images/$demo_folder/"
+                  fi
+                fi
+              done < conf.ini
+            done
+            parsed_list=( $parsed_list )
+          fi
+          superbuild_matrix=""
+          custom_matrix=""
+          children_matrix=""
+          superbuild_flag=false
+          custom_flag=false
+          children_flag=false
+          children_flag_output=false
+          iter_superbuild=0
+          iter_custom=0
+          iter_children=0
+          for i in "${parsed_list[@]}"
+          do 
+              folder=$(echo $i | awk -F'/' '{print $1}' | tr -d '"' | tr -d '[' | tr -d ']')
+              if [ "$folder" == "dockerfile_images" ]
+              then
+                  element=$(echo $i | awk -F'/' '{print $3}' | tr -d '"' | tr -d '[' | tr -d ']')
+                  image_path=dockerfile_images/$(echo $i | awk -F'/' '{print $2}' | tr -d '"' | tr -d '[' | tr -d ']')
+                  element_flag=false
+                  children_flag=false
+                  children_image_flag=false
+                  while read -r line || [ -n "$line" ]
+                  do
+                      if [ "$line" == "[superbuild]" ]
+                      then
+                          superbuild_flag=true
+                          element_flag=true
+                      fi  
+                      if [ "$line" == "[sources]" ] || [ "$line" == "[binaries]" ] || [ "$line" == "[tag]" ] || [ "$line" == "[superbuild]" ] || [ "$line" == "[demos]" ] || [ "$line" == "" ]
+                      then
+                          children_flag=false
+                      fi
+                      if [ $children_flag == true ]
+                      then
+                          if [ $iter_children == 0 ]
+                          then
+                              children_flag_output=true
+                              children_matrix="$line"
+                              iter_children=$((iter_children+1))  
+                          else
+                              children_matrix="$children_matrix $line"
+                          fi
+                      fi
+                      if [ "$line" == "[children]" ]
+                      then
+                          echo "children found"
+                          children_flag=true
+                          children_image_flag=true
+                      fi  
+                  done < $image_path/$element/conf_build.ini
+                  echo $children_image_flag
+                  if [[ $element_flag == true ]] 
+                  then
+                      if [ $iter_superbuild == 0 ]
+                      then
+                          superbuild_matrix="$element"
+                          iter_superbuild=$((iter_superbuild+1))  
+                      else
+                          superbuild_matrix="$superbuild_matrix $element"
+                      fi 
+                  else
+                      custom_flag=true
+                      if [ $iter_custom == 0 ]
+                      then
+                          custom_matrix="$element"
+                          iter_custom=$((iter_custom+1))  
+                      else
+                          custom_matrix="$custom_matrix $element"
+                      fi
+                  fi                
+              fi
+          done
+          children_matrix="$children_matrix"
+          children_matrix_list=( $children_matrix )
+
+          superbuild_matrix=( $superbuild_matrix )
+          new_superbuild_matrix=""
+          echo "this is the list without @ $superbuild_matrix"
+          echo "this is the list with @ ${superbuild_matrix[@]}"
+          
+          for elem_1 in "${superbuild_matrix[@]}"
+          do
+            echo "this is element 1 $elem_1"
+            is_children=false
+            for elem_2 in "${children_matrix_list[@]}"
+            do
+              echo "this is element 2 $elem_2"
+              if [ "$elem_2" == "$elem_1" ]
+              then
+                is_children=true
+                echo "$elem_1 is children"
+                break
+              fi
+            done
+            if ( ! $is_children )
+            then
+              if [ "$new_superbuild_matrix" == "" ]
+              then
+                new_superbuild_matrix="\"$elem_1\""
+              else
+                new_superbuild_matrix="$new_superbuild_matrix \"$elem_1\""
+              fi
+            fi
+          done
+          echo "this is after the loop ${new_superbuild_matrix[@]}"
+          superbuild_matrix_temp=$(echo "${new_superbuild_matrix[@]}" | tr ' ' '\n' | sort -u | tr '\n' ',')
+          superbuild_final_matrix="[ $(echo "${superbuild_matrix_temp[@]}")"        
+          superbuild_final_matrix="$(echo ${superbuild_final_matrix::-1}) ]"
+
+          custom_matrix=( $custom_matrix )
+          new_custom_matrix=""
+
+          for elem_1 in "${custom_matrix[@]}"
+          do
+            is_children=false
+            for elem_2 in "${children_matrix_list[@]}"
+            do
+              if [ "$elem_2" == "$elem_1" ]
+              then
+                is_children=true
+                break
+              fi
+            done
+            if ( ! $is_children )
+            then
+              if [ "$new_custom_matrix" == "" ]
+              then
+                new_custom_matrix="\"$elem_1\""
+              else
+                new_custom_matrix="$new_custom_matrix \"$elem_1\""
+              fi
+            fi
+          done
+          custom_matrix_temp=$(echo "${new_custom_matrix[@]}" | tr ' ' '\n' | sort -u | tr '\n' ',')
+          custom_final_matrix="[ $(echo "${custom_matrix_temp[@]}")"
+          custom_final_matrix="$(echo ${custom_final_matrix::-1}) ]"
+          
+          if [[ "${{ github.event.client_payload.type }}" == "repository_trigger" ]]
+          then
+            version_matrix="[ \"release\" ]"
+          else
+            version_matrix="[ \"master\" ]"
+          fi
+          
+          echo "superbuild matrix: $superbuild_final_matrix"
+          echo "superbuild build: $superbuild_flag"
+          echo "custom matrix: $custom_final_matrix"
+          echo "custom build: $custom_flag"
+          echo "children: ${children_matrix[@]}"
+          echo "children_flag build: $children_flag"
+          echo "children_flag_output: $children_flag_output"
+          echo "superbuild_matrix=$superbuild_final_matrix" >> $GITHUB_OUTPUT
+          echo "custom_matrix=$custom_final_matrix" >> $GITHUB_OUTPUT
+          echo "superbuild_flag=$superbuild_flag" >> $GITHUB_OUTPUT
+          echo "custom_flag=$custom_flag" >> $GITHUB_OUTPUT
+          echo "paths=${parsed_list[@]}" >> $GITHUB_OUTPUT
+          echo "children_matrix=${children_matrix}" >> $GITHUB_OUTPUT
+          echo "children_flag_output=$children_flag_output" >> $GITHUB_OUTPUT
+          echo "version=$version_matrix" >> $GITHUB_OUTPUT
+      outputs:
+        superbuild_matrix: ${{ steps.set-matrix.outputs.superbuild_matrix }}
+        custom_matrix: ${{ steps.set-matrix.outputs.custom_matrix }}
+        superbuild_flag: ${{ steps.set-matrix.outputs.superbuild_flag }}
+        custom_flag: ${{ steps.set-matrix.outputs.custom_flag }}
+        paths: ${{ steps.set-matrix.outputs.paths }}
+        children_matrix: ${{ steps.set-matrix.outputs.children_matrix }}
+        children_flag: ${{ steps.set-matrix.outputs.children_flag_output }}
+        version: ${{ steps.set-matrix.outputs.version }}
+
+    build_and_push_superbuild:
+      runs-on: [self-hosted, code]
+      needs: check_files
+      if: needs.check_files.outputs.superbuild_flag == 'true'
+      strategy:
+        matrix: 
+          apps: ${{fromJson(needs.check_files.outputs.superbuild_matrix)}}
+          version: ${{fromJson(needs.check_files.outputs.version)}}
+          tag: [Stable, Unstable, Custom]
+          exclude:
+          - version: release
+            tag: Stable
+          - version: release
+            tag: Unstable
+          - version: master
+            tag: Custom
+        fail-fast: false
+
+      steps:
+        - name: Print app name
+          run: echo ${{matrix.apps}} && echo ${{matrix.version}} && echo ${{matrix.tag}} 
+
+  #########################################################################################
+
+        - uses: oprypin/find-latest-tag@v1
+          if: matrix.version == 'release'
+          with:
+            repository: icub-tech-iit/code
+            releases-only: true  
+          id: release-version
+
+  ##################### check out the correct version (master or release) ###############
+        - uses: actions/checkout@v2
+          if: matrix.version == 'master'
+          with:
+            ref: 'master'
+
+        - uses: actions/checkout@v2
+          if: matrix.version == 'release'
+          with:
+            ref: '${{ steps.release-version.outputs.tag }}'
+
+  #########################################################################################
+
+        - name: Login to DockerHub Registry
+          run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+  ##################### Command to set the tag for the date argument ######################
+        - name: set date argument for Docker build
+          run: |
+            echo "$(date +'%d/%m/%Y')" > DATE_
+            echo "metadata=$(cat DATE_)" > DATE_TAG
+            echo $(cat DATE_TAG)
+          
+ ##################### Here we check the release version and replace Custom with stable only for the image name ######################
+        - name: Get release / master version
+          id: get_version
+          run: |
+            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ steps.release-version.outputs.tag }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
+            if [ "${{matrix.tag}}" == "Custom" ]
+            then        
+              echo "TAG=" >> $GITHUB_OUTPUT
+            else       
+              echo "TAG=$(echo \"-${{matrix.tag}}\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+            fi
+   
+        - name: Get path 
+          id: get_path
+          run: |            
+            for j in ${{needs.check_files.outputs.paths}}
+            do
+                if [ $(echo $j | awk '/'"${{matrix.apps}}"'/') ]
+                then
+                    path="dockerfile_images/$(echo $j | awk -F'/' '{print $2}' | tr -d '"')"
+                    echo "PATH=$path" >> $GITHUB_OUTPUT
+                    exit 0
+                fi
+            done  
+        
+        - name: Get Build Arguments
+          id: get_args
+          run: |
+            sources_args=""
+            binaries_args=""
+            tag_arg=""
+            sources_flag=false
+            binaries_flag=false
+            tag_flag=false
+            compile_sources=false
+            compile_binaries=false
+            demos_matrix=""
+            demos_flag=false
+            demos_flag_output=false
+            iter_demos=0
+            while read -r line || [ -n "$line" ]
+            do
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.tag}}/${{matrix.tag}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.TAG}}/${{steps.get_version.outputs.TAG}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              if [ "$line" == "[sources]" ]
+              then
+                  sources_flag=true
+                  binaries_flag=false
+                  tag_flag=false
+                  compile_sources=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[binaries]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=true
+                  tag_flag=false
+                  compile_binaries=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[tag]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[children]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=false
+                  demos_flag=false
+              fi
+              if [ $demos_flag == true ]
+              then
+                  if [ $iter_demos == 0 ]
+                  then
+                      demos_flag_output=true
+                      demos_matrix="$line"
+                      iter_demos=$((iter_demos+1))  
+                  else
+                      demos_matrix="$demos_matrix $line"
+                  fi
+              fi
+              if [ "$line" == "[demos]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=false
+                  demos_flag=true
+              fi
+              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
+              then
+                if [[ $sources_flag != false ]]
+                then
+                    sources_args="$sources_args --build-arg \"$line\""
+                fi
+                if [[ $binaries_flag != false ]]
+                then
+                    binaries_args="$binaries_args --build-arg \"$line\""
+                fi  
+                if [[ $tag_flag != false ]] 
+                then
+                    tag_arg="--tag \"$line"
+                    img_name="\"$line"
+                fi
+              fi
+            done < ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/conf_build.ini
+            demos_matrix=$(echo "${demos_matrix[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+            demos_matrix="$(echo ${demos_matrix::-1})"
+            echo "SRC_ARGS=$sources_args" >> $GITHUB_OUTPUT
+            echo "BIN_ARGS=$binaries_args" >> $GITHUB_OUTPUT
+            echo "TAG_ARGS=$tag_arg" >> $GITHUB_OUTPUT
+            echo "IMG_NAME=$img_name" >> $GITHUB_OUTPUT
+            echo "CMPL_SRC=$compile_sources" >> $GITHUB_OUTPUT
+            echo "CMPL_BIN=$compile_binaries" >> $GITHUB_OUTPUT
+            echo "demos_matrix=${demos_matrix[@]}" >> $GITHUB_OUTPUT
+            echo "demos_flag_output=$demos_flag_output" >> $GITHUB_OUTPUT
+            echo "sources: $sources_args"
+            echo "binaries: $binaries_args"
+            echo "cmpl sources: $compile_sources"
+            echo "cmpl binaries: $compile_binaries"
+            echo "cmpl tag: $tag_arg"
+            echo "demo matrix: ${demos_matrix[@]}"
+        - name: Build Docker sources images
+          id: build-sources
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker build ${{ steps.get_args.outputs.SRC_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile ${{ steps.get_args.outputs.TAG_ARGS }}_sources" 
+
+        - name: Push Docker source images
+          id: push-sources
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker push ${{ steps.get_args.outputs.IMG_NAME }}_sources" 
+
+        - name: Build Docker binaries images
+          id: build-binaries
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker build  ${{ steps.get_args.outputs.BIN_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile4Production ${{ steps.get_args.outputs.TAG_ARGS }}_binaries" 
+
+        - name: Push Docker binaries images
+          id: push-binaries
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker push ${{ steps.get_args.outputs.IMG_NAME }}_binaries"
+
+        - name: Trigger testing pipeline for source image
+          if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: app_testing_from_code
+            client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
+
+        - name: Trigger testing pipeline for binary image
+          if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled() 
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: app_testing_from_code
+            client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}","img_list": "icubteamcode/${{matrix.apps}}", "version_list": "${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
+          
+      # outputs:
+      #     img_name: ${{ steps.get_args.outputs.IMG_NAME }}
+      #     version_name: ${{ steps.get_version.outputs.VERSION }}
+      #     tag_name: ${{ steps.get_version.outputs.TAG }}
+
+    build_and_push_custom:
+      runs-on: [self-hosted, code]
+      needs: check_files
+      if: needs.check_files.outputs.custom_flag == 'true'
+      strategy:
+        matrix: 
+          apps: ${{fromJson(needs.check_files.outputs.custom_matrix)}}
+          version: ${{fromJson(needs.check_files.outputs.version)}}
+        fail-fast: false
+
+      steps:
+
+
+  #########################################################################################
+
+        - uses: oprypin/find-latest-tag@v1
+          if: matrix.version == 'release'
+          with:
+            repository: icub-tech-iit/code
+            releases-only: true  
+          id: release-version
+
+  ##################### check out the correct version (master or release) ###############
+        - uses: actions/checkout@v2
+          if: matrix.version == 'master'
+          with:
+            ref: 'master'
+
+        - uses: actions/checkout@v2
+          if: matrix.version == 'release'
+          with:
+            ref: '${{ steps.release-version.outputs.tag }}'
+
+  #########################################################################################
+
+        - name: Login to DockerHub Registry
+          run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+  ##################### Command to set the tag for the date argument ######################
+        - name: set date argument for Docker build
+          run: |
+            echo "$(date +'%d/%m/%Y')" > DATE_
+            echo "metadata=$(cat DATE_)" > DATE_TAG
+            echo $(cat DATE_TAG)
+
+ ##################### Here we check the release version and replace Custom with stable only for the image name ######################
+        - name: Get release / master version
+          id: get_version
+          run: |
+            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ steps.release-version.outputs.tag }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
+            
+
+        - name: Get path 
+          id: get_path
+          run: |            
+            for j in ${{needs.check_files.outputs.paths}}
+            do
+                echo "$(echo $j | awk '/'"${{matrix.apps}}"'/')"
+                if [ $(echo $j | awk '/'"${{matrix.apps}}"'/') ]
+                then
+                    path="dockerfile_images/$(echo $j | awk -F'/' '{print $2}' | tr -d '"')"
+                    echo $path
+                    echo "PATH=$path" >> $GITHUB_OUTPUT
+                    exit 0
+                fi
+            done  
+        
+        - name: Get Build Arguments
+          id: get_args
+          run: |
+            sources_args=""
+            binaries_args=""
+            tag_arg=""
+            sources_flag=false
+            binaries_flag=false
+            tag_flag=false
+            compile_sources=false
+            compile_binaries=false
+            demos_matrix=""
+            demos_flag=false
+            demos_flag_output=false
+            iter_demos=0
+            while read -r line || [ -n "$line" ]
+            do
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              if [ "$line" == "[sources]" ]
+              then
+                  sources_flag=true
+                  binaries_flag=false
+                  tag_flag=false
+                  compile_sources=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[binaries]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=true
+                  tag_flag=false
+                  compile_binaries=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[tag]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=true
+                  demos_flag=false
+              fi
+              if [ "$line" == "[children]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=false
+                  demos_flag=false
+              fi
+              if [ $demos_flag == true ]
+              then
+                  if [ $iter_demos == 0 ]
+                  then
+                      demos_flag_output=true
+                      demos_matrix="$line"
+                      iter_demos=$((iter_demos+1))  
+                  else
+                      demos_matrix="$demos_matrix $line"
+                  fi
+              fi
+              if [ "$line" == "[demos]" ]
+              then
+                  sources_flag=false
+                  binaries_flag=false
+                  tag_flag=false
+                  demos_flag=true
+              fi
+              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
+              then
+                if [[ $sources_flag != false ]]
+                then
+                    sources_args="$sources_args --build-arg \"$line\""
+                fi
+                if [[ $binaries_flag != false ]]
+                then
+                    binaries_args="$binaries_args --build-arg \"$line\""
+                fi  
+                if [[ $tag_flag != false ]] 
+                then
+                    tag_arg="--tag \"$line"
+                    img_name="\"$line"
+                fi
+              fi
+            done < ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/conf_build.ini
+            demos_matrix=$(echo "${demos_matrix[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+            demos_matrix="$(echo ${demos_matrix::-1})"
+            echo "SRC_ARGS=$sources_args" >> $GITHUB_OUTPUT
+            echo "BIN_ARGS=$binaries_args" >> $GITHUB_OUTPUT
+            echo "TAG_ARGS=$tag_arg" >> $GITHUB_OUTPUT
+            echo "IMG_NAME=$img_name" >> $GITHUB_OUTPUT
+            echo "CMPL_SRC=$compile_sources" >> $GITHUB_OUTPUT
+            echo "CMPL_BIN=$compile_binaries" >> $GITHUB_OUTPUT
+            echo "demos_matrix=${demos_matrix[@]}" >> $GITHUB_OUTPUT
+            echo "demos_flag_output=$demos_flag_output" >> $GITHUB_OUTPUT
+            echo "sources: $sources_args"
+            echo "binaries: $binaries_args"
+            echo "cmpl sources: $compile_sources"
+            echo "cmpl binaries: $compile_binaries"
+            echo "cmpl tag: $tag_arg"
+        - name: Build Docker sources images
+          id: build-sources
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker build ${{ steps.get_args.outputs.SRC_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile ${{ steps.get_args.outputs.TAG_ARGS }}_sources" 
+
+        - name: Push Docker source images
+          id: push-sources
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker push ${{ steps.get_args.outputs.IMG_NAME }}_sources" 
+
+        - name: Build Docker binaries images
+          id: build-binaries
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker build  ${{ steps.get_args.outputs.BIN_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile4Production ${{ steps.get_args.outputs.TAG_ARGS }}_binaries"
+
+        - name: Push Docker binaries images
+          id: push-binaries
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker push ${{ steps.get_args.outputs.IMG_NAME }}_binaries"
+ 
+        - name: Trigger testing pipeline for source image
+          if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: app_testing_from_code
+            client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+
+        - name: Trigger testing pipeline for binary image
+          if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: app_testing_from_code
+            client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+        
+    trigger_children_build:
+      runs-on: [self-hosted, code]
+      needs: [build_and_push_custom, build_and_push_superbuild, check_files]
+      if:  always() && needs.check_files.outputs.children_flag == 'true' && ! cancelled()
+      steps:
+      
+        # this step ensures that the children are built with the "release" version, which is used when the "repository_trigger" is sent
+        - name: Repository Dispatch for release
+          if: github.event.client_payload.type == 'repository_trigger'
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: repository_trigger
+            client-payload: '{"type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
+            
+        # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
+        - name: Repository Dispatch for master
+          if: github.event.client_payload.type != 'repository_trigger'
+          uses: peter-evans/repository-dispatch@v1
+          with:
+            token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+            repository: icub-tech-iit/code
+            event-type: cron_trigger
+            client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
+
+
+    # trigger_test_build_sources:
+    #   runs-on: [self-hosted, code]
+    #   needs: [build_and_push_superbuild, check_files]
+    #   if: needs.check_files.outputs.demos_flag == 'true' && ! cancelled()
+    #   steps:
+    #     - name: Repository Dispatch
+    #       uses: peter-evans/repository-dispatch@v1
+    #       with:
+    #         token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+    #         repository: icub-tech-iit/code
+    #         event-type: app_testing_from_code
+    #         client-payload: '{"type": "app_testing_from_code", "app_list": "${{ needs.check_files.outputs.demos_matrix }}", "img_list": "${{ needs.build_and_push_superbuild.outputs.img_name }}", "version_list": "${{needs.build_and_push_superbuild.outputs.version_name}}-${{needs.build_and_push_superbuild.outputs.tag_name}}_master", "tag_list": "sources"}'
+
+    # trigger_test_build_binaries:
+    #   runs-on: [self-hosted, code]
+    #   needs: [build_and_push_superbuild, check_files]
+    #   if: needs.check_files.outputs.demos_flag == 'true' && ! cancelled()
+    #   steps:
+    #     - name: Repository Dispatch
+    #       uses: peter-evans/repository-dispatch@v1
+    #       with:
+    #         token: ${{ secrets.CODE_ACCESS_TOKEN  }}
+    #         repository: icub-tech-iit/code
+    #         event-type: app_testing_from_code
+    #         client-payload: '{"type": "app_testing_from_code", "app_list": "${{ needs.check_files.outputs.demos_matrix }}", "img_list": "${{ needs.build_and_push_superbuild.outputs.img_name }}", "version_list": "${{needs.build_and_push_superbuild.outputs.version_name}}-${{needs.build_and_push_superbuild.outputs.tag_name}}_master", "tag_list": "binaries"}'
