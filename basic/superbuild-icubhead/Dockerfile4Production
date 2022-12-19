@@ -1,0 +1,80 @@
+#start from image passed by argument during build process. Usually it is an superbuild:full
+ARG SOURCE_IMG="none"
+ARG START_IMG="none"
+
+
+FROM $SOURCE_IMG as builder
+
+LABEL maintainer="alexandre.gomespereira@iit.it, valentina.gaggero@iit.it, vadim.tikhanoff@iit.it, valentina.vasco@iit.it " 
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+
+FROM $START_IMG
+#to avoid interaction with tzdata configuration
+ENV DEBIAN_FRONTEND=noninteractive
+
+#install here all runtime depencencies....
+RUN mkdir /etc/bash_completion.d/ &&\
+    apt-get update &&\
+    apt-get install -y \
+        # MISC
+        bash-completion \
+        qt5-default \
+        vim \
+        #git \
+        #cmake \
+        #cmake-curses-gui \
+        #build-essential \
+        #core
+        coinor-libipopt1v5 \
+        libboost-all-dev \
+        libopencv-dev \
+        libopencv-core-dev \
+        libode-dev \
+        liblua5.1 \
+        lua5.1 \
+        swig \
+        libsdl1.2debian \
+        libxml2\
+        # YARP
+        libace-6.4.5 \
+        libeigen3-dev \
+        #libgsl0 \ ??? now commented, but is it usefull ?
+        libedit2 \
+        #qtmultimedia5 \ ??? now commented, but is it usefull ?
+        libqt5opengl5 \
+        #qttools5 \ ??? now commented, but is it usefull ?
+        #libtinyxml2-6 \
+        libtinyxml-dev \
+        #yarp-gui
+        #qtbase5 \ ??? now commented, but is it usefull ?
+        qml-module-qtquick2 \
+        qml-module-qtquick-window2 \
+        qml-module-qtmultimedia \
+        qml-module-qtquick-dialogs \
+        qml-module-qtquick-controls \
+        qml-module-qt-labs-folderlistmodel \
+        qml-module-qt-labs-settings \
+        libdc1394-22 \  
+        &&\
+        rm -rf /var/lib/apt/lists/*
+
+
+
+
+# Copy the superbuild binary & entrypoint script from previous stage
+COPY --from=builder /usr/local /usr/local
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+
+#The EXPOSE instruction does not actually publish the port. 
+#It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published. 
+#To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
+EXPOSE 10000/tcp 10000/udp
+
+# Some QT-Apps don't show controls without this
+ENV QT_X11_NO_MITSHM 1
+ENV YARP_COLORED_OUTPUT 1
+
+CMD ["bash"]
+

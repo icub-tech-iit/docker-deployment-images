@@ -1,0 +1,23 @@
+
+#start from a ubuntu image plus mesa library recompiled with specific configuration
+ARG START_IMG="none"
+ARG SOURCE_IMG="none"
+
+FROM $SOURCE_IMG AS builder
+FROM $START_IMG  as secondstage
+
+LABEL maintainer="alexandre.gomespereira@iit.it, valentina.gaggero@iit.it, vadim.tikhanoff@iit.it, valentina.vasco@iit.it " 
+
+COPY --from=builder /usr /usr
+COPY --from=builder /etc /etc
+
+FROM scratch
+
+ENV QT_X11_NO_MITSHM 1
+ENV YARP_COLORED_OUTPUT 1
+
+COPY --from=secondstage / /
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+EXPOSE 10000/tcp 10000/udp
+CMD ["bash"]

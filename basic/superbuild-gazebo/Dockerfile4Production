@@ -1,0 +1,28 @@
+#start from a ubuntu image plus mesa library recompiled with specific configuration
+ARG START_IMG="none"
+ARG SOURCE_IMG="none"
+
+FROM $SOURCE_IMG as source
+
+LABEL maintainer=" vadim.tikhanoff@iit.it, valentina.gaggero@iit.it, valentina.vasco@iit.it"
+
+    # We use a middle stage because several COPY commands with hardlinks and softlinks generate duplication
+FROM $START_IMG as middlestage 
+
+COPY --from=source /usr/ /usr
+COPY --from=source /etc/ /etc
+
+FROM scratch
+
+COPY --from=middlestage / /
+
+ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+EXPOSE 10000/tcp 10000/udp
+
+ENV YARP_ROBOT_NAME="iCubGazeboV2_5" 
+ENV QT_X11_NO_MITSHM=1 
+ENV YARP_COLORED_OUTPUT=1 
+
+CMD ["bash"]

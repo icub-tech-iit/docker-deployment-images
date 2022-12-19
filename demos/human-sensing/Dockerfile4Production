@@ -1,0 +1,16 @@
+#here add all stuff necessary to run redball demo
+#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_devel_full
+
+ARG SOURCE_IMG="none"
+ARG START_IMG="none"
+
+FROM $SOURCE_IMG as builder
+
+FROM $START_IMG
+
+LABEL maintainer="laura.cavaliere@iit.it vadim.tikhanoff@iit.it" 
+
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/share /usr/share
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /openpose/models /openpose/models

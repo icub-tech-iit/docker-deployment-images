@@ -1,0 +1,43 @@
+ARG SOURCE_IMG="none"
+ARG START_IMG="none"
+
+FROM $SOURCE_IMG as builder
+
+FROM $START_IMG
+
+LABEL maintainer="nicolo.genesio@iit.it marcello.goccia@iit.it"
+
+# Install the projects using the superbuild (From Diego)
+
+ARG PROJECTS_DIR=/projects
+ARG BRANCH=master
+ARG CMAKE_GENERATOR="Unix Makefiles"
+ARG BUILD_TYPE=Release
+ARG CMAKE_EXTRA_OPTIONS=-j2
+ARG INSTALL_DIR="/usr/local/"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+#The EXPOSE instruction does not actually publish the port.
+#It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
+#To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
+EXPOSE 10000/tcp 10000/udp
+
+# Some QT-Apps don't show controls without this
+ENV QT_X11_NO_MITSHM 1
+ENV YARP_COLORED_OUTPUT=1
+ENV PATH=/grpc/build:$PATH
+
+COPY --from=builder /root /root
+COPY --from=builder /usr/share /usr/share
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/bin /usr/bin
+COPY --from=builder /usr/lib /usr/lib
+# It is needed because until now bru does not install anything
+COPY --from=builder /projects/blender-robotics-utils /projects/blender-robotics-utils
+
+RUN apt-get update && rm -rf /var/lib/apt/lists/* && ldconfig
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+
+CMD ["bash"]

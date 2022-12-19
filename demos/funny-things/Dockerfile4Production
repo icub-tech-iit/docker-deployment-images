@@ -1,0 +1,25 @@
+ARG SOURCE_IMG="None"
+ARG START_IMG="None"
+
+FROM $SOURCE_IMG as builder 
+
+FROM $START_IMG
+
+LABEL maintainer="german.rodriguez@iit.it, vadim.tikhanoff@iit.it"
+
+RUN mkdir /root/shared-files
+
+COPY --from=builder /usr/bin /usr/bin
+
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+COPY --from=builder /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
+
+COPY --from=builder /usr/local/share/lua/ /usr/local/share/lua
+
+COPY --from=builder /usr/local/lib/lua /usr/local/lib/lua
+
+ENV LUA_CPATH=";/usr/local/lib/lua/5.2/?.so"
+ENV LUA_PATH=";;;/usr/local/share/lua/5.2/posix/?.lua"
+
+CMD ["bash"]

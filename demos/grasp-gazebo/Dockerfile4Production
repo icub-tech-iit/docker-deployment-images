@@ -1,0 +1,70 @@
+
+ARG SOURCE_IMG="None"
+ARG START_IMG="None"
+
+#FROM ubuntu:focal
+#
+#LABEL maintainer="vadim.tikhanoff@iit.it, alexandre.gomespereira@iit.it, laura.cavaliere@iit.it"
+
+
+FROM $SOURCE_IMG as builder 
+
+FROM $START_IMG
+
+# Non-interactive installation mode
+ENV DEBIAN_FRONTEND=noninteractive
+
+
+# Set environmental variables
+ENV ICUBcontrib_DIR=/workspace/iCubContrib
+ENV YARP_DATA_DIRS=/usr/local/share/yarp:/usr/local/share/iCub:${ICUBcontrib_DIR}/share/ICUBcontrib
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/yarp:${ICUBcontrib_DIR}/lib
+
+ENV GAZEBO_RESOURCE_PATH=${GAZEBO_RESOURCE_PATH}:${ICUBcontrib_DIR}/share/gazebo/worlds
+ENV GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:/usr/local/share:/usr/local/share/iCub/robots:${ICUBcontrib_DIR}/share/gazebo/models
+ENV PATH=${PATH}:${ICUBcontrib_DIR}/bin
+
+
+COPY --from=builder /workspace/iCubContrib /workspace/iCubContrib
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/bin /usr/bin
+COPY --from=builder /usr/share /usr/share
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /lib/x86_64-linux-gnu /lib/x86_64-linux-gnu
+RUN true
+COPY --from=builder /etc /etc
+
+
+RUN echo "GIT_PROMPT_ONLY_IN_REPO=1" >> ~/.bashrc && \
+    echo "source \${HOME}/.bash-git-prompt/gitprompt.sh" >> ~/.bashrc && \
+    echo "source /usr/share/gazebo/setup.sh" >> ~/.bashrc && \
+    echo "export GAZEBO_RESOURCE_PATH=\${GAZEBO_RESOURCE_PATH}:\${ICUBcontrib_DIR}/share/gazebo/worlds" >> ~/.bashrc && \
+    echo "export GAZEBO_MODEL_PATH=\${GAZEBO_MODEL_PATH}:/usr/local/share:/usr/local/share/iCub/robots:\${ICUBcontrib_DIR}/share/gazebo/models" >> ~/.bashrc && \
+    echo "export PATH=\${PATH}:\${ICUBcontrib_DIR}/bin" >> ~/.bashrc
+
+# Set up script to prepare /workspace/iCubContrib
+#COPY init-icubcontrib.sh /usr/bin/init-icubcontrib.sh
+#COPY init-icubcontrib-local.sh /usr/bin/init-icubcontrib-local.sh
+#RUN chmod +x /usr/bin/init-icubcontrib.sh /usr/bin/init-icubcontrib-local.sh
+
+
+# Manage yarp port
+EXPOSE 10000/tcp 10000/udp
+
+# Some QT-Apps don't show controls without this
+ENV QT_X11_NO_MITSHM 1
+ENV YARP_COLORED_OUTPUT 1
+
+
+COPY setup.sh /usr/share/gazebo/setup.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+
+# Launch bash from /workspace
+WORKDIR /workspace
+CMD ["bash"]
+
+
+
+
+
