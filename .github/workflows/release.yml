@@ -23,9 +23,9 @@ jobs:
         run: | 
              if [[ "${{github.event_name}}" == "repository_dispatch" ]]
              then
-              export version= ${{ github.event.client_payload.version }} >> $GITHUB_OUTPUT 
+              echo "version=${{ github.event.client_payload.version }}" >> $GITHUB_OUTPUT 
              else
-              export version=${{ inputs.version }} >> $GITHUB_OUTPUT 
+              echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT 
              fi
       - name: Debug
         id: debug
