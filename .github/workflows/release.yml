@@ -30,8 +30,15 @@ jobs:
       - name: Debug
         id: debug
         run : echo "my version is ${{ steps.get_version.outputs.version }}"
+      - name: Check Tag
+        id: check_tag
+        uses: mukunku/tag-exists-action@v1.2.0
+        with: 
+          tag: 'steps.get_version.outputs.version'
+      - run: echo "Does the tag exist?  ${{ steps.checkTag.outputs.exists }} "
       - name: Create Release
         id: create_release
+        if: ${{ steps.checkTag.outputs.exists }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
