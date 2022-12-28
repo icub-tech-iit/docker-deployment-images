@@ -3,6 +3,13 @@ name: Release
 on:
     repository_dispatch:
         types: [release_trigger]
+    
+    workflow_dispatch:
+      inputs:
+        version:
+          description: 'version of superbuild'
+          required: true
+          default: '2022.x.y'
 
 jobs:
   build:
@@ -11,42 +18,45 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Get Token
-        id: get_workflow_token
-        uses: tibdex/github-app-token@v1
-        with:
-          private_key: ${{ secrets.ICUB_TECH_CODE_KEY }}
-          app_id: ${{ secrets.ICUB_TECH_CODE_ID }}
-          repository: icub-tech-iit/code
+      - name: Get Version
+        id: get_version
+        if [[ "${{github.event_name}}" == "repository_dispatch" ]]
+          then
+           export version= ${{ github.event.client_payload.version }} >> $GITHUB_OUTPUT 
+        else
+          export version=inputs.version >> $GITHUB_OUTPUT 
+      - name: Debug
+        id: debug
+         echo "my version is ${{ steps.get_version.outputs.version }}"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.client_payload.version }}
-          release_name: Code ${{ github.event.client_payload.version }}
+          tag_name:  ${{ steps.get_version.outputs.version }}
+          release_name: Deployment  ${{ steps.get_version.outputs.version }}
           body: |
-            Release ${{ github.event.client_payload.version }}
+            Release  ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
 
-      - name: Repository Dispatch for appsAway
-        uses: peter-evans/repository-dispatch@v1
-        env:
-          GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
-        with:
-          token: ${{ env.GITHUB_APPS_TOKEN }}
-          repository: icub-tech-iit/appsAway
-          event-type: code_trigger
-          client-payload: '{"version": "${{ github.event.client_payload.version }}"}'
+      # - name: Repository Dispatch for appsAway
+      #   uses: peter-evans/repository-dispatch@v1
+      #   env:
+      #     GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+      #   with:
+      #     token: ${{ env.GITHUB_APPS_TOKEN }}
+      #     repository: icub-tech-iit/appsAway
+      #     event-type: code_trigger
+      #     client-payload: '{"version": "${{ github.event.client_payload.version }}"}'
 
       - name: Repository Dispatch for building images
         uses: peter-evans/repository-dispatch@v1
         env:
           GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         with:
-          token: ${{ env.GITHUB_APPS_TOKEN }}
-          repository: icub-tech-iit/code
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: valegagge/Deployment
           event-type: repository_trigger
-          client-payload: '{"version": "${{ steps.get_version.outputs.VERSION }}", "type": "repository_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
+          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
