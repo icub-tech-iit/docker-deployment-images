@@ -1,5 +1,5 @@
 #here add all stuff necessary to run icub-tests
-#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_source
+#start from image passed by argument during build process. Usually it is valegagge/superbuild:master-unstable_source
 ARG SOURCE_IMG="none"
 ARG INSTALL_DIR="/usr/local"
 #ARG PROJECTS_DIR=/projects

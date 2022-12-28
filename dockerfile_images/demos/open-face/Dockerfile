@@ -1,5 +1,5 @@
 #
-#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_devel_full
+#start from image passed by argument during build process. Usually it is valegagge/superbuild:master-unstable_devel_full
 ARG SOURCE_IMG="none"
 ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 
@@ -18,7 +18,7 @@ RUN wget -q https://www.dropbox.com/s/7na5qsjzz8yfoer/cen_patches_0.25_of.dat &&
 
 
 #start from image passed by argument during build process. Usually it is an ubuntu image plus mesa library.
-#ARG UBUNTU_IMG_NAME="icubteamcode/superbuild:v2020.05_sources"
+#ARG UBUNTU_IMG_NAME="valegagge/superbuild:v2020.05_sources"
 FROM $SOURCE_IMG as ubuntu_base
 
 ARG METADATA_FILE
