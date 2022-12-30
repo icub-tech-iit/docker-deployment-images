@@ -38,7 +38,7 @@ jobs:
       - name: degug check tag
         id: debug_check_tag 
         run: | 
-             if [[ ${{ steps.checkTag.outputs.exists }} ]]
+             if [[ ${{ steps.check_tag.outputs.exists }} ]]
              then
               echo "the version ${{ steps.get_version.outputs.version }} exist" 
              else
