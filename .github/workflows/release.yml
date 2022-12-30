@@ -43,6 +43,7 @@ jobs:
               echo "the version ${{ steps.get_version.outputs.version }} exist" 
              else
               echo "the version ${{ steps.get_version.outputs.version }} NOT exist" 
+             fi
       - name: Create Release
         id: create_release
         if: ${{ steps.checkTag.outputs.exists }}
