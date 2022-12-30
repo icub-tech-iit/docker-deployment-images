@@ -350,13 +350,21 @@ jobs:
             demos_flag=false
             demos_flag_output=false
             iter_demos=0
+
+            echo "{{matrix.tag}} - ${{matrix.tag}}"
+            echo "{{steps.get_version.outputs.TAG}} - ${{steps.get_version.outputs.TAG}}"
+            echo "{{matrix.version}} - ${{matrix.version}}"
+            echo "{{matrix.apps}} - ${{matrix.apps}}"
+            echo "{{steps.get_version.outputs.VERSION}} - ${{steps.get_version.outputs.VERSION}}"
             while read -r line || [ -n "$line" ]
             do
+              echo "line is $line"
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.tag}}/${{matrix.tag}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.TAG}}/${{steps.get_version.outputs.TAG}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              echo "dopo line is $line"
               if [ "$line" == "[sources]" ]
               then
                   sources_flag=true
