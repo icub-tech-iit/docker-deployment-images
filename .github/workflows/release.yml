@@ -9,7 +9,7 @@ on:
         version:
           description: 'version of superbuild'
           required: true
-          default: '2022.x.y'
+          default: 'v2022.x.y'
 
 jobs:
   build:
@@ -35,7 +35,14 @@ jobs:
         uses: mukunku/tag-exists-action@v1.2.0
         with: 
           tag: 'steps.get_version.outputs.version'
-      - run: echo "Does the tag exist?  ${{ steps.checkTag.outputs.exists }} "
+      - name degug check tag
+        id: debug_check_tag 
+        run: | 
+             if [[ ${{ steps.checkTag.outputs.exists }} ]]
+             then
+              echo "the version ${{ steps.get_version.outputs.version }} exist" 
+             else
+              echo "the version ${{ steps.get_version.outputs.version }} NOT exist" 
       - name: Create Release
         id: create_release
         if: ${{ steps.checkTag.outputs.exists }}
