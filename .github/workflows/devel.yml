@@ -1,0 +1,25 @@
+name: Devel
+
+on: 
+    workflow_dispatch:
+    schedule:
+    # Run the job once a week
+    - cron: '0 0 * * 0'
+    
+jobs:
+  build:
+    name: build devel and master images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout deployment
+        uses: actions/checkout@v2
+        
+      - name: Repository Dispatch for building images
+        uses: peter-evans/repository-dispatch@v1
+        env:
+          GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: valegagge/Deployment
+          event-type: cron_trigger
+          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
