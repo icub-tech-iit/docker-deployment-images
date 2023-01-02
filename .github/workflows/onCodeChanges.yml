@@ -10,9 +10,23 @@ on:
         types: [repository_trigger,robotology_trigger, cron_trigger]
 
 jobs:
+    debug:
+      runs-on: [ubuntu-latest]
+      steps: 
+      - id: get_data
+        run: |
+          echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR_
+          echo "metadata=$(cat DATE_HOUR_)" > DATE_HOUR_TAG
+          echo $(cat DATE_HOUR_TAG)
+      - id: get_version
+        run: |
+          echo "I received the version: ${{ github.event.client_payload.version }}"
+
+      
 
     check_files:
       runs-on: [ubuntu-latest]
+      needs: debug
       steps: 
       - id: file_changes
         if: github.event_name == 'push'
