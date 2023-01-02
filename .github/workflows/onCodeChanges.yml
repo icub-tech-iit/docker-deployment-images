@@ -328,7 +328,7 @@ jobs:
         - name: Get release / master version
           id: get_version
           run: |
-            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ steps.release-version.outputs.tag }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
+            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ github.event.client_payload.version }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
             if [ "${{matrix.tag}}" == "Custom" ]
             then        
               echo "TAG=" >> $GITHUB_OUTPUT
@@ -552,7 +552,7 @@ jobs:
         - name: Get release / master version
           id: get_version
           run: |
-            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ steps.release-version.outputs.tag }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
+            echo "VERSION=$( if [ \"${{ matrix.version }}\" == \"release\" ]; then echo \"${{ github.event.client_payload.version }}\"; else echo \"master\"; fi)" >> $GITHUB_OUTPUT
             
 
         - name: Get path 
