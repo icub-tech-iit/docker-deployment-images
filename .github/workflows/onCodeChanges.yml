@@ -4,8 +4,8 @@ on:
     push:
         branches:
             - master
-#        paths:
-#            - 'dockerfile_images/**'
+        paths:
+            - 'dockerfile_images/**'
     repository_dispatch:
         types: [repository_trigger,robotology_trigger, cron_trigger]
 
