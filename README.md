@@ -1,3 +1,7 @@
+## General info
+This repository contains all dockerfiles useful to build the docker images employed both for development purposes and for deploying applications.
+
+
 ## Docker images structure
 
 Our docker images are included inside the folder [`code/dockerfile_images`](https://github.com/icub-tech-iit/code/tree/feat/doc/dockerfile_images), with the following structure:
