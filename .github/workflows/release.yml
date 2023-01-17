@@ -52,7 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name:  ${{ steps.get_version.outputs.version }}
-          release_name: Deployment  ${{ steps.get_version.outputs.version }}
+          release_name: docker-deployment-images  ${{ steps.get_version.outputs.version }}
           body: |
             Release  ${{ steps.get_version.outputs.version }}
           draft: false
@@ -74,6 +74,6 @@ jobs:
           GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          repository: valegagge/Deployment
+          repository: icub-tech-iit/docker-deployment-images
           event-type: repository_trigger
           client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'

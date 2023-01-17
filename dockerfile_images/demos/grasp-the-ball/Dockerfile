@@ -1,5 +1,5 @@
 #here add all stuff necessary to run redball demo
-#start from image passed by argument during build process. Usually it is valegagge/superbuild:master-unstable_devel_full
+#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_devel_full
 ARG SOURCE_IMG="none"
 ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 FROM $SOURCE_IMG as builder

@@ -297,7 +297,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: valegagge/Deployment
+            repository: icub-tech-iit/docker-deployment-images
             releases-only: true  
           id: release-version
 
@@ -485,18 +485,18 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/Deployment
+        #     repository: icub-tech-iit/docker-deployment-images
         #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "valegagge/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
+        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
 
         # - name: Trigger testing pipeline for binary image
         #   if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled() 
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/Deployment
+        #     repository: icub-tech-iit/docker-deployment-images
         #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}","img_list": "valegagge/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
+        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}","img_list": "icubteamcode/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
           
       # outputs:
       #     img_name: ${{ steps.get_args.outputs.IMG_NAME }}
@@ -521,7 +521,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: valegagge/Deployment
+            repository: icub-tech-iit/docker-deployment-images
             releases-only: true  
           id: release-version
 
@@ -695,18 +695,18 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/Deployment
+        #     repository: icub-tech-iit/docker-deployment-images
         #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "valegagge/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
 
         # - name: Trigger testing pipeline for binary image
         #   if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/Deployment
+        #     repository: icub-tech-iit/docker-deployment-images
         #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "valegagge/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
         
     trigger_children_build:
       runs-on: [ubuntu-latest]
@@ -720,7 +720,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: valegagge/Deployment
+            repository: icub-tech-iit/docker-deployment-images
             event-type: repository_trigger
             client-payload: '{"type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
             
@@ -730,7 +730,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: valegagge/Deployment
+            repository: icub-tech-iit/docker-deployment-images
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
 

@@ -7,7 +7,7 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 # Definitions
 ARG ROS_IMG=ros:foxy-ros-core
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
-ARG SUPERBUILD_IMG=valegagge/superbuild-icubhead:master-unstable_sources
+ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
 ARG PROJECTS_DIR=/projects
 
 FROM $SUPERBUILD_IMG as superbuild_builder

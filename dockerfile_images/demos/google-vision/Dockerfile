@@ -1,4 +1,4 @@
-#start from image passed by argument during build process. Usually it is valegagge/superbuild:master_master-unstable_sources
+#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master_master-unstable_sources
 ARG START_IMG="none"
 ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 

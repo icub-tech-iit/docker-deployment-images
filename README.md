@@ -35,17 +35,17 @@ Each folder typically includes:
 The `conf_build` is structured as follows:
 ```
 [sources]
-START_IMG=valegagge/ubuntu:focal
+START_IMG=icubteamcode/ubuntu:focal
 $(cat DATE_TAG)
 release={{steps.get_version.outputs.VERSION}}
 sbtag={{matrix.tag}}
 
 [binaries]
-SOURCE_IMG=valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}_sources
-START_IMG=valegagge/ubuntu:focal
+SOURCE_IMG=icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}_sources
+START_IMG=icubteamcode/ubuntu:focal
 
 [tag]
-valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}
+icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}
 
 [superbuild]
 
@@ -64,15 +64,15 @@ robotBaseStartup
 :warning: **Important note**: for **custom** images, the conf build file keeps the same structure, but some sections / placeholders are missing. In particular, the following is an example of a conf build looks like:
 ```
 [sources]
-START_IMG=valegagge/ubuntu:focal
+START_IMG=icubteamcode/ubuntu:focal
 $(cat DATE_TAG)
 
 [binaries]
-SOURCE_IMG=valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}_sources
-START_IMG=valegagge/ubuntu:focal
+SOURCE_IMG=icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}_sources
+START_IMG=icubteamcode/ubuntu:focal
 
 [tag]
-valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}
+icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}
 
 [children]
 grasp-the-ball-gazebo
@@ -84,8 +84,8 @@ The file contains the following sections:
 This indicates the `--tag` argument for the docker build and docker push instructions. **It does not include the `_sources` or `_binaries` tag**.
 
 This section **must always be**:
-- `valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}` for images **based on `robotology-superbuild`**  
-- `valegagge/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}` for **custom images**.
+- `icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}{{steps.get_version.outputs.TAG}}` for images **based on `robotology-superbuild`**  
+- `icubteamcode/{{matrix.apps}}:{{steps.get_version.outputs.VERSION}}` for **custom images**.
 
 In particular:
 - the tag always starts with `icubteamcode`, since this is the name of our repository on `DockerHub`; 
