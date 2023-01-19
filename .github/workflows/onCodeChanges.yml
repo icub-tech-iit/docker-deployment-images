@@ -722,7 +722,7 @@ jobs:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: icub-tech-iit/docker-deployment-images
             event-type: repository_trigger
-            client-payload: '{"type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
+            client-payload: '{"version": "${{ github.event.client_payload.version }}", "type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
             
         # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
         - name: Repository Dispatch for master

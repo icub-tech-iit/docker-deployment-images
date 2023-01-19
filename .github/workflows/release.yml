@@ -34,7 +34,7 @@ jobs:
         id: check_tag
         uses: mukunku/tag-exists-action@v1.2.0
         with: 
-          tag: 'steps.get_version.outputs.version'
+          tag: ${{ steps.get_version.outputs.version }}
       - name: degug check tag
         id: debug_check_tag 
         run: | 
