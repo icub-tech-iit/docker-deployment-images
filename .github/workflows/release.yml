@@ -38,7 +38,7 @@ jobs:
       - name: degug check tag
         id: debug_check_tag 
         run: | 
-             if [[ ${{ steps.check_tag.outputs.exists }} ]]
+             if [[ "${{steps.check_tag.outputs.exists}}" == "true" ]]
              then
               echo "the version ${{ steps.get_version.outputs.version }} exist" 
              else
@@ -46,7 +46,7 @@ jobs:
              fi
       - name: Create Release
         id: create_release
-        if:  ${{ ! steps.check_tag.outputs.exists }}
+        if:  ${{ steps.check_tag.outputs.exists == 'false' }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
