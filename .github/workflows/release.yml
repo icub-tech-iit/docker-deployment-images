@@ -76,4 +76,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: icub-tech-iit/docker-deployment-images
           event-type: repository_trigger
-          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
+          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-icubhead-withuser superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
