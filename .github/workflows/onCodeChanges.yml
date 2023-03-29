@@ -297,7 +297,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: icub-tech-iit/docker-deployment-images
+            repository: MSECode/docker-deployment-images-testing
             releases-only: true  
           id: release-version
 
@@ -316,6 +316,14 @@ jobs:
 
         - name: Login to DockerHub Registry
           run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+  
+  #########################################################################################        
+        - name: Log in to the Container registry          
+          uses: docker/login-action@v2.0.0          
+          with:            
+            registry: ghcr.io            
+            username: ${{ github.actor }}            
+            password: ${{ secrets.GITHUB_TOKEN }} 
 
   ##################### Command to set the tag for the date argument ######################
         - name: set date argument for Docker build
@@ -470,6 +478,16 @@ jobs:
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker push ${{ steps.get_args.outputs.IMG_NAME }}_sources" 
 
+        - name: tag source images for Ghcr.io
+          id: tag-sources
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker tag ${{ steps.get_args.outputs.IMG_NAME }}_sources" ghcr.io/MSECode/${{ steps.get_args.outputs.IMG_NAME }}_sources
+
+        - name: Push Docker source images to Ghcr.io
+          id: push-sources-ghcr
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker push ghcr.io/MSECode/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
+
         - name: Build Docker binaries images
           id: build-binaries
           if: steps.get_args.outputs.CMPL_BIN == 'true'
@@ -485,7 +503,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: icub-tech-iit/docker-deployment-images
+        #     repository: MSECode/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
 
@@ -494,7 +512,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: icub-tech-iit/docker-deployment-images
+        #     repository: MSECode/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}","img_list": "icubteamcode/${{matrix.apps}}", "version_list": ${{steps.get_version.outputs.VERSION}}-${{steps.get_version.outputs.TAG}}, "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}}}'
           
@@ -521,7 +539,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: icub-tech-iit/docker-deployment-images
+            repository: MSECode/docker-deployment-images-testing
             releases-only: true  
           id: release-version
 
@@ -695,7 +713,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: icub-tech-iit/docker-deployment-images
+        #     repository: MSECode/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
 
@@ -704,7 +722,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: icub-tech-iit/docker-deployment-images
+        #     repository: MSECode/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
         
@@ -720,7 +738,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: icub-tech-iit/docker-deployment-images
+            repository: MSECode/docker-deployment-images-testing
             event-type: repository_trigger
             client-payload: '{"version": "${{ github.event.client_payload.version }}", "type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
             
@@ -730,7 +748,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: icub-tech-iit/docker-deployment-images
+            repository: MSECode/docker-deployment-images-testing
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
 
