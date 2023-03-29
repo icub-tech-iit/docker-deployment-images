@@ -11,7 +11,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
     debug:
@@ -301,7 +300,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: ${{ env.IMAGE_NAME }}
+            repository: valegagge/docker-deployment-images-testing
             releases-only: true  
           id: release-version
 
@@ -505,12 +504,12 @@ jobs:
         - name: tag source images for Ghcr.io
           id: tag-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker tag ${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ env.REGISTRY }}/${{env.IMAGE_NAME}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+          run: docker tag ${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ env.REGISTRY }}/${{ github.repository }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
 
         - name: Push Docker source images to Ghcr.io
           id: push-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{ env.REGISTRY }}/${{ github.repository }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
 
         - name: Build Docker binaries images
           id: build-binaries
@@ -563,7 +562,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: {{ env.IMAGE_NAME }}
+            repository: valegagge/docker-deployment-images-testing
             releases-only: true  
           id: release-version
 
@@ -756,7 +755,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: {{ env.IMAGE_NAME }}
+        #     repository: valegagge/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
 
@@ -765,7 +764,7 @@ jobs:
         #   uses: peter-evans/repository-dispatch@v1
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: {{ env.IMAGE_NAME }}
+        #     repository: valegagge/docker-deployment-images-testing
         #     event-type: app_testing_from_code
         #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
         
@@ -781,7 +780,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: {{ env.IMAGE_NAME }}
+            repository: valegagge/docker-deployment-images-testing
             event-type: repository_trigger
             client-payload: '{"version": "${{ github.event.client_payload.version }}", "type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
             
@@ -791,7 +790,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: {{ env.IMAGE_NAME }}
+            repository: valegagge/docker-deployment-images-testing
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
 
