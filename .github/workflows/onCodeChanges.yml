@@ -12,6 +12,7 @@ env:
   REGISTRY: ghcr.io
   REPOSITORY_NAME: ${{ github.repository }}
   REPOSITORY_OWNER: ${{ github.repository_owner }}
+  DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
     debug:
@@ -25,8 +26,6 @@ jobs:
       - id: get_version
         run: |
           echo "I received the version: ${{ github.event.client_payload.version }}"
-
-      
 
     check_files:
       runs-on: [ubuntu-latest]
@@ -322,11 +321,11 @@ jobs:
           run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
   
   #########################################################################################        
-        - name: Log in to the Container registry          
-          uses: docker/login-action@v2.0.0          
-          with:            
-            registry: ghcr.io            
-            username: ${{ github.actor }}            
+        - name: Log in to the Container registry
+          uses: docker/login-action@v2.0.0
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }} 
 
   ##################### Command to set the tag for the date argument ######################
@@ -363,6 +362,8 @@ jobs:
         - name: Get Build Arguments
           id: get_args
           run: |
+            start_img=""
+            source_img=""
             sources_args=""
             binaries_args=""
             tag_arg=""
@@ -382,6 +383,7 @@ jobs:
             echo "{{matrix.version}} - ${{matrix.version}}"
             echo "{{matrix.apps}} - ${{matrix.apps}}"
             echo "{{steps.get_version.outputs.VERSION}} - ${{steps.get_version.outputs.VERSION}}"
+            echo "{{env.REPOSITORY_OWNER}} - ${{env.REPOSITORY_OWNER}}"
             while read -r line || [ -n "$line" ]
             do
               echo "line is $line"
@@ -390,6 +392,7 @@ jobs:
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REPOSITORY_OWNER}}/${{env.REPOSITORY_OWNER}}/g' temp.tmp && cat temp.tmp)
               echo "dopo line is $line"
               if [ "$line" == "[sources]" ]
               then
@@ -464,7 +467,7 @@ jobs:
                 fi  
                 if [[ $tag_flag != false ]] 
                 then
-                    tag_arg="--tag fakerepo/\"$line"
+                    tag_arg="--tag ${{env.REPOSITORY_OWNER}}/\"$line"
                 fi
                 if [[ $tag_github_flag != false ]] 
                 then
@@ -494,22 +497,22 @@ jobs:
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker build ${{ steps.get_args.outputs.SRC_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile ${{ steps.get_args.outputs.TAG_ARGS }}_sources" 
 
-        - name: tag source images for dockerhub
+        - name: Tag source images for dockerhub
           id: tag-sources-dockerhub
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker tag fakerepo/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
 
         - name: Push Docker source images
-          id: push-sources
+          id: push-sources-dockerhub
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
 
-        - name: tag source images for Ghcr.io
-          id: tag-sources
+        - name: Tag source images for Ghcr.io
+          id: tag-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
 
-        - name: Push Docker source images to Ghcr.io
+        - name: Push source images to Ghcr.io
           id: push-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
@@ -519,10 +522,25 @@ jobs:
           if: steps.get_args.outputs.CMPL_BIN == 'true'
           run: docker build  ${{ steps.get_args.outputs.BIN_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile4Production ${{ steps.get_args.outputs.TAG_ARGS }}_binaries" 
 
-        - name: Push Docker binaries images
-          id: push-binaries
+        - name: Tag binaries images for dockerhub
+          id: tag-binaries-dockerhub
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+        
+        - name: Push Docker binaries images
+          id: push-binaries-dockerhub
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+
+        - name: Tag binaries images for ghcr
+          id: tag-binaries-ghcr
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+        
+        - name: Push binaries images to ghcr
+          id: push-binaries-ghcr
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
 
         # - name: Trigger testing pipeline for source image
         #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
