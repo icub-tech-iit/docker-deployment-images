@@ -10,7 +10,7 @@ on:
         types: [repository_trigger,robotology_trigger, cron_trigger]
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REPOSITORY_NAME: ${{ github.repository }}
   REPOSITORY_OWNER: ${{ github.repository_owner }}
 
 jobs:
@@ -301,7 +301,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: ${{ env.IMAGE_NAME }}
+            repository: ${{ env.REPOSITORY_NAME }}
             releases-only: true  
           id: release-version
 
@@ -502,12 +502,12 @@ jobs:
         - name: tag source images for Ghcr.io
           id: tag-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
 
         - name: Push Docker source images to Ghcr.io
           id: push-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
 
         - name: Build Docker binaries images
           id: build-binaries
@@ -776,7 +776,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: ${{ env.IMAGE_NAME }}
+            repository: ${{ env.REPOSITORY_NAME }}
             event-type: repository_trigger
             client-payload: '{"version": "${{ github.event.client_payload.version }}", "type": "repository_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
             
@@ -786,7 +786,7 @@ jobs:
           uses: peter-evans/repository-dispatch@v1
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
-            repository: ${{ env.IMAGE_NAME }}
+            repository: ${{ env.REPOSITORY_NAME }}
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
 
