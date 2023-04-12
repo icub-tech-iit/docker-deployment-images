@@ -464,7 +464,7 @@ jobs:
                 fi  
                 if [[ $tag_flag != false ]] 
                 then
-                    tag_arg="--tag ${{ env.REPOSITORY_OWNER }}/\"$line"
+                    tag_arg="--tag fakerepo/\"$line"
                 fi
                 if [[ $tag_github_flag != false ]] 
                 then
@@ -494,10 +494,15 @@ jobs:
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker build ${{ steps.get_args.outputs.SRC_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile ${{ steps.get_args.outputs.TAG_ARGS }}_sources" 
 
+        - name: tag source images for dockerhub
+          id: tag-sources-dockerhub
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker tag fakerepo/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+
         - name: Push Docker source images
           id: push-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
 
         - name: tag source images for Ghcr.io
           id: tag-sources
