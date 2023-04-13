@@ -14,6 +14,7 @@ env:
   REPOSITORY_OWNER: ${{ github.repository_owner }}
   DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
   DEFAULT_USER: defaultuser
+  IMAGE_PREFIX: sw_deployments_
 
 jobs:
     debug:
@@ -443,7 +444,7 @@ jobs:
                   tag_flag=false
                   demos_flag=true
               fi
-              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[tag-github]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
+              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
               then
                 if [[ $sources_flag != false ]]
                 then
@@ -568,7 +569,7 @@ jobs:
         - uses: oprypin/find-latest-tag@v1
           if: matrix.version == 'release'
           with:
-            repository: valegagge/docker-deployment-images-testing
+            repository: ${{ env.REPOSITORY_NAME }}
             releases-only: true  
           id: release-version
 
@@ -637,6 +638,8 @@ jobs:
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.DEFAULT_USER}}/${{env.DEFAULT_USER}}/g' temp.tmp && cat temp.tmp)
+
               if [ "$line" == "[sources]" ]
               then
                   sources_flag=true
@@ -658,13 +661,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=true
-                  demos_flag=false
-              fi
-              if [ "$line" == "[tag-github]" ]
-              then
-                  sources_flag=false
-                  binaries_flag=false
-                  tag_flag=false
                   demos_flag=false
               fi
               if [ "$line" == "[children]" ]
@@ -692,7 +688,7 @@ jobs:
                   tag_flag=false
                   demos_flag=true
               fi
-              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[tag-github]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
+              if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
               then
                 if [[ $sources_flag != false ]]
                 then
@@ -704,7 +700,7 @@ jobs:
                 fi  
                 if [[ $tag_flag != false ]] 
                 then
-                    tag_arg="--tag ${{ env.REPOSITORY_OWNER }}/\"$line\""
+                    tag_arg="--tag ${{env.DEFAULT_USER}}/\"$line\""
                     img_name="\"$line"
                 fi
               fi
@@ -730,39 +726,51 @@ jobs:
           if: steps.get_args.outputs.CMPL_SRC == 'true'
           run: docker build ${{ steps.get_args.outputs.SRC_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile ${{ steps.get_args.outputs.TAG_ARGS }}_sources" 
 
+        - name: Tag source images for dockerhub
+          id: tag-sources-dockerhub
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker tag ${{env.DEFAULT_USER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources"
+
         - name: Push Docker source images
           id: push-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
+
+        - name: Tag source images for Ghcr.io
+          id: tag-sources-ghcr
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker tag ${{env.DEFAULT_USER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources"
+
+        - name: Push source images to Ghcr.io
+          id: push-sources-ghcr
+          if: steps.get_args.outputs.CMPL_SRC == 'true'
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
 
         - name: Build Docker binaries images
           id: build-binaries
           if: steps.get_args.outputs.CMPL_BIN == 'true'
           run: docker build  ${{ steps.get_args.outputs.BIN_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile4Production ${{ steps.get_args.outputs.TAG_ARGS }}_binaries"
 
+        - name: Tag binaries images for dockerhub
+          id: tag-binaries-dockerhub
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker tag ${{env.DEFAULT_USER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
+
         - name: Push Docker binaries images
           id: push-binaries
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
- 
-        # - name: Trigger testing pipeline for source image
-        #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
-        #   uses: peter-evans/repository-dispatch@v1
-        #   with:
-        #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/docker-deployment-images-testing
-        #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "sources", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
 
-        # - name: Trigger testing pipeline for binary image
-        #   if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
-        #   uses: peter-evans/repository-dispatch@v1
-        #   with:
-        #     token: ${{ secrets.GITHUB_TOKEN  }}
-        #     repository: valegagge/docker-deployment-images-testing
-        #     event-type: app_testing_from_code
-        #     client-payload: '{"type": "app_testing_from_code", "app_list": "${{ steps.get_args.outputs.demos_matrix }}", "img_list": "icubteamcode/${{matrix.apps}}", "version_list": "master", "tag_list": "binaries", "children_flag": ${{needs.check_files.outputs.children_flag}} }'
+        - name: Tag binaries images for ghcr
+          id: tag-binaries-ghcr
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker tag ${{env.DEFAULT_USER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
         
+        - name: Push binaries images to ghcr
+          id: push-binaries-ghcr
+          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
+
     trigger_children_build:
       runs-on: [ubuntu-latest]
       needs: [build_and_push_custom, build_and_push_superbuild, check_files]
@@ -788,30 +796,3 @@ jobs:
             repository: ${{ env.REPOSITORY_NAME }}
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
-
-
-    # trigger_test_build_sources:
-    #   runs-on: [self-hosted, code]
-    #   needs: [build_and_push_superbuild, check_files]
-    #   if: needs.check_files.outputs.demos_flag == 'true' && ! cancelled()
-    #   steps:
-    #     - name: Repository Dispatch
-    #       uses: peter-evans/repository-dispatch@v1
-    #       with:
-    #         token: ${{ secrets.GITHUB_TOKEN  }}
-    #         repository: icub-tech-iit/code
-    #         event-type: app_testing_from_code
-    #         client-payload: '{"type": "app_testing_from_code", "app_list": "${{ needs.check_files.outputs.demos_matrix }}", "img_list": "${{ needs.build_and_push_superbuild.outputs.img_name }}", "version_list": "${{needs.build_and_push_superbuild.outputs.version_name}}-${{needs.build_and_push_superbuild.outputs.tag_name}}_master", "tag_list": "sources"}'
-
-    # trigger_test_build_binaries:
-    #   runs-on: [self-hosted, code]
-    #   needs: [build_and_push_superbuild, check_files]
-    #   if: needs.check_files.outputs.demos_flag == 'true' && ! cancelled()
-    #   steps:
-    #     - name: Repository Dispatch
-    #       uses: peter-evans/repository-dispatch@v1
-    #       with:
-    #         token: ${{ secrets.GITHUB_TOKEN  }}
-    #         repository: icub-tech-iit/code
-    #         event-type: app_testing_from_code
-    #         client-payload: '{"type": "app_testing_from_code", "app_list": "${{ needs.check_files.outputs.demos_matrix }}", "img_list": "${{ needs.build_and_push_superbuild.outputs.img_name }}", "version_list": "${{needs.build_and_push_superbuild.outputs.version_name}}-${{needs.build_and_push_superbuild.outputs.tag_name}}_master", "tag_list": "binaries"}'
