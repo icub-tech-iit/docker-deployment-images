@@ -399,7 +399,6 @@ jobs:
                   sources_flag=true
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   compile_sources=true
                   demos_flag=false
               fi
@@ -408,7 +407,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=true
                   tag_flag=false
-                  tag_github_flag=false
                   compile_binaries=true
                   demos_flag=false
               fi
@@ -417,15 +415,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=true
-                  tag_github_flag=false
-                  demos_flag=false
-              fi
-              if [ "$line" == "[tag-github]" ]
-              then
-                  sources_flag=false
-                  binaries_flag=false
-                  tag_flag=false
-                  tag_github_flag=true
                   demos_flag=false
               fi
               if [ "$line" == "[children]" ]
@@ -433,7 +422,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   demos_flag=false
               fi
               if [ $demos_flag == true ]
@@ -452,7 +440,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   demos_flag=true
               fi
               if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[tag-github]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
@@ -468,10 +455,7 @@ jobs:
                 if [[ $tag_flag != false ]] 
                 then
                     tag_arg="--tag ${{env.REPOSITORY_OWNER}}/\"$line"
-                fi
-                if [[ $tag_github_flag != false ]] 
-                then
-                    img_name_github="\"$line"
+                    img_name="\"$line"
                 fi
               fi
             done < ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/conf_build.ini
@@ -480,7 +464,7 @@ jobs:
             echo "SRC_ARGS=$sources_args" >> $GITHUB_OUTPUT
             echo "BIN_ARGS=$binaries_args" >> $GITHUB_OUTPUT
             echo "TAG_ARGS=$tag_arg" >> $GITHUB_OUTPUT
-            echo "IMG_NAME_GITHUB=$img_name_github" >> $GITHUB_OUTPUT
+            echo "IMG_NAME=$img_name" >> $GITHUB_OUTPUT
             echo "CMPL_SRC=$compile_sources" >> $GITHUB_OUTPUT
             echo "CMPL_BIN=$compile_binaries" >> $GITHUB_OUTPUT
             echo "demos_matrix=${demos_matrix[@]}" >> $GITHUB_OUTPUT
@@ -500,22 +484,22 @@ jobs:
         - name: Tag source images for dockerhub
           id: tag-sources-dockerhub
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources"
 
         - name: Push Docker source images
           id: push-sources-dockerhub
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
 
         - name: Tag source images for Ghcr.io
           id: tag-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources"
 
         - name: Push source images to Ghcr.io
           id: push-sources-ghcr
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
 
         - name: Build Docker binaries images
           id: build-binaries
@@ -525,22 +509,22 @@ jobs:
         - name: Tag binaries images for dockerhub
           id: tag-binaries-dockerhub
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries" ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
         
         - name: Push Docker binaries images
           id: push-binaries-dockerhub
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
 
         - name: Tag binaries images for ghcr
           id: tag-binaries-ghcr
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker tag ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries" ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
         
         - name: Push binaries images to ghcr
           id: push-binaries-ghcr
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
 
         # - name: Trigger testing pipeline for source image
         #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
@@ -641,7 +625,6 @@ jobs:
             sources_flag=false
             binaries_flag=false
             tag_flag=false
-            tag_github_flag=false
             compile_sources=false
             compile_binaries=false
             demos_matrix=""
@@ -658,7 +641,6 @@ jobs:
                   sources_flag=true
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   compile_sources=true
                   demos_flag=false
               fi
@@ -667,7 +649,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=true
                   tag_flag=false
-                  tag_github_flag=false
                   compile_binaries=true
                   demos_flag=false
               fi
@@ -676,7 +657,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=true
-                  tag_github_flag=false
                   demos_flag=false
               fi
               if [ "$line" == "[tag-github]" ]
@@ -684,7 +664,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=true
                   demos_flag=false
               fi
               if [ "$line" == "[children]" ]
@@ -692,7 +671,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   demos_flag=false
               fi
               if [ $demos_flag == true ]
@@ -711,7 +689,6 @@ jobs:
                   sources_flag=false
                   binaries_flag=false
                   tag_flag=false
-                  tag_github_flag=false
                   demos_flag=true
               fi
               if [ "$line" != "[sources]" ] && [ "$line" != "[binaries]" ] && [ "$line" != "[tag]" ] && [ "$line" != "[tag-github]" ] && [ "$line" != "[superbuild]" ] && [ "$line" != "[children]" ] && [ "$line" != "[demos]" ] &&  [  "$line" != ""  ]
@@ -727,10 +704,7 @@ jobs:
                 if [[ $tag_flag != false ]] 
                 then
                     tag_arg="--tag ${{ env.REPOSITORY_OWNER }}/\"$line\""
-                fi
-                if [[ $tag_github_flag != false ]] 
-                then
-                    img_name_github="\"$line"
+                    img_name="\"$line"
                 fi
               fi
             done < ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/conf_build.ini
@@ -739,7 +713,7 @@ jobs:
             echo "SRC_ARGS=$sources_args" >> $GITHUB_OUTPUT
             echo "BIN_ARGS=$binaries_args" >> $GITHUB_OUTPUT
             echo "TAG_ARGS=$tag_arg" >> $GITHUB_OUTPUT
-            echo "IMG_NAME_GITHUB=$img_name_github" >> $GITHUB_OUTPUT
+            echo "IMG_NAME=$img_name" >> $GITHUB_OUTPUT
             echo "CMPL_SRC=$compile_sources" >> $GITHUB_OUTPUT
             echo "CMPL_BIN=$compile_binaries" >> $GITHUB_OUTPUT
             echo "demos_matrix=${demos_matrix[@]}" >> $GITHUB_OUTPUT
@@ -757,7 +731,7 @@ jobs:
         - name: Push Docker source images
           id: push-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_sources" 
+          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_sources" 
 
         - name: Build Docker binaries images
           id: build-binaries
@@ -767,7 +741,7 @@ jobs:
         - name: Push Docker binaries images
           id: push-binaries
           if: steps.get_args.outputs.CMPL_BIN == 'true'
-          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME_GITHUB }}_binaries"
+          run: docker push ${{env.REPOSITORY_OWNER}}/${{ steps.get_args.outputs.IMG_NAME }}_binaries"
  
         # - name: Trigger testing pipeline for source image
         #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
