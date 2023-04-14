@@ -14,7 +14,7 @@ env:
   REPOSITORY_OWNER: ${{ github.repository_owner }}
   DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
   DEFAULT_USER: defaultuser
-  IMAGE_PREFIX: sw_deployments_
+  IMAGE_PREFIX: cd_
 
 jobs:
     debug:
