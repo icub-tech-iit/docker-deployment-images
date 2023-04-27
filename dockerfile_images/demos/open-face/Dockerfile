@@ -112,6 +112,9 @@ COPY --from=model_data /data/patch_experts/* \
 # copy the CMakeLists.txt into openface folder
 RUN cp yarpopenface/CMakeLists.txt /root/openface
 
+# copy the yarpOpenFace folder into openface exe folder
+RUN cp -R yarpopenface/yarpOpenFace /root/openface/exe/
+
 RUN cd openface && mkdir -p build && cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE \
           -G Ninja .. && \
