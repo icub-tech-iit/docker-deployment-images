@@ -20,7 +20,7 @@ RUN apt update && \
 
 RUN luarocks install luaposix
 
-RUN npm install -g npm@latest
+RUN npm install -g npm@8.5.5
 
 ARG PROJECTS_DIR=/projects
 ARG CMAKE_EXTRA_OPTIONS=-j2

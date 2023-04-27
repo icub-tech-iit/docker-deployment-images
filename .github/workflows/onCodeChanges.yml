@@ -394,6 +394,9 @@ jobs:
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REGISTRY}}/${{env.REGISTRY}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's@{{env.REPOSITORY_NAME}}@${{env.REPOSITORY_NAME}}@g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.IMAGE_PREFIX}}/${{env.IMAGE_PREFIX}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REPOSITORY_OWNER}}/${{env.REPOSITORY_OWNER}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.DEFAULT_USER}}/${{env.DEFAULT_USER}}/g' temp.tmp && cat temp.tmp)
               echo "dopo line is $line"
@@ -647,6 +650,9 @@ jobs:
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REGISTRY}}/${{env.REGISTRY}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's@{{env.REPOSITORY_NAME}}@${{env.REPOSITORY_NAME}}@g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{env.IMAGE_PREFIX}}/${{env.IMAGE_PREFIX}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REPOSITORY_OWNER}}/${{env.REPOSITORY_OWNER}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.DEFAULT_USER}}/${{env.DEFAULT_USER}}/g' temp.tmp && cat temp.tmp)
 

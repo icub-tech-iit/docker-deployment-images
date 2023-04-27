@@ -40,17 +40,17 @@ RUN wget https://github.com/icub-tech-iit/appsAway/files/9112222/FT_setup_can.zi
 RUN unzip FT_setup_can
 
 # TODO to be removed once it will merged on upstream branch
-RUN cd ${PROJECTS_DIR} && git clone https://github.com/vvasco/yarp &&\
+RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
     cd yarp &&\
-    git checkout feat/canftwriteapi &&\
+    git checkout master &&\
     mkdir build && cd build &&\
     cmake .. &&\
     make install -j5
 
 # TODO to be removed once it will merged on upstream branch
-RUN cd ${PROJECTS_DIR} && git clone https://github.com/vvasco/icub-main &&\
+RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/icub-main &&\
     cd icub-main &&\
-    git checkout feat/canftwriteapi &&\
+    git checkout devel &&\
     mkdir build && cd build &&\
     cmake .. \
         -DENABLE_icubmod_canBusFtSensor:BOOL=ON \
