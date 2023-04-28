@@ -19,10 +19,17 @@ EXPOSE 10000/tcp 10000/udp
 ENV QT_X11_NO_MITSHM 1
 ENV YARP_COLORED_OUTPUT=1
 
+# Added RUN true among COPY command for preventing that COPY produces a null effect
+# Otherwise compilation will fail
+# Here complete explanation: https://stackoverflow.com/questions/51115856/docker-failed-to-export-image-failed-to-create-image-failed-to-get-layer
 COPY --from=builder /root /root
+RUN true
 COPY --from=builder /usr/share /usr/share
+RUN true
 COPY --from=builder /usr/local /usr/local
+RUN true
 COPY --from=builder /usr/bin /usr/bin
+RUN true
 COPY --from=builder /usr/lib /usr/lib
 
 CMD ["bash"]
