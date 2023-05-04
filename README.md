@@ -4,7 +4,7 @@ This repository contains all dockerfiles useful to build the docker images emplo
 
 ## Docker images structure
 
-Our docker images are included inside the folder [`icub-tech-iit/docker-deployment-images`](https://github.com/icub-tech-iit/docker-deployment-images), with the following structure:
+Our docker images are included inside the folder [`dockerfile_images`](dockerfile_images), with the following structure:
 ```
 master
      |_ docker-deployment-images
