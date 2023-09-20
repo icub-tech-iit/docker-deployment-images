@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get Version
         id: get_version
         run: | 
@@ -39,7 +39,7 @@ jobs:
               echo "my REPOSITORY_NAME_ONLY is  ${{ env.REPOSITORY_NAME_ONLY }} "
       - name: Check Tag
         id: check_tag
-        uses: mukunku/tag-exists-action@v1.2.0
+        uses: mukunku/tag-exists-action@v1.4.0
         with: 
           tag: ${{ steps.get_version.outputs.version }}
       - name: degug check tag
@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name:  ${{ steps.get_version.outputs.version }}
-          release_name: ${{ REPOSITORY_NAME_ONLY }}  ${{ steps.get_version.outputs.version }}
+          release_name: ${{ env.REPOSITORY_NAME_ONLY }}  ${{ steps.get_version.outputs.version }}
           body: |
             Release  ${{ steps.get_version.outputs.version }}
           draft: false
@@ -76,7 +76,7 @@ jobs:
       #     client-payload: '{"version": "${{ github.event.client_payload.version }}"}'
 
       - name: Repository Dispatch for building images
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         env:
           GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         with:
