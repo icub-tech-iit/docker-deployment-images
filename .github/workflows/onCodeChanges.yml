@@ -324,7 +324,7 @@ jobs:
   
   #########################################################################################        
         - name: Log in to the Container registry
-          uses: docker/login-action@v2.0.0
+          uses: docker/login-action@v3
           with:
             registry: ghcr.io
             username: ${{ github.actor }}
@@ -595,7 +595,7 @@ jobs:
 
   #########################################################################################        
         - name: Log in to the Container registry
-          uses: docker/login-action@v2.0.0
+          uses: docker/login-action@v3
           with:
             registry: ghcr.io
             username: ${{ github.actor }}
@@ -796,7 +796,7 @@ jobs:
         # this step ensures that the children are built with the "release" version, which is used when the "repository_trigger" is sent
         - name: Repository Dispatch for release
           if: github.event.client_payload.type == 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v1
+          uses: peter-evans/repository-dispatch@v2
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
@@ -806,7 +806,7 @@ jobs:
         # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
         - name: Repository Dispatch for master
           if: github.event.client_payload.type != 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v1
+          uses: peter-evans/repository-dispatch@v2
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}

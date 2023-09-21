@@ -54,16 +54,16 @@ jobs:
       - name: Create Release
         id: create_release
         if:  ${{ steps.check_tag.outputs.exists == 'false' }}
-        uses: actions/create-release@v1
+        uses: action-pack/github-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name:  ${{ steps.get_version.outputs.version }}
-          release_name: ${{ env.REPOSITORY_NAME_ONLY }}  ${{ steps.get_version.outputs.version }}
+          title: ${{ env.REPOSITORY_NAME_ONLY }}  ${{ steps.get_version.outputs.version }}
+          tag:  ${{ steps.get_version.outputs.version }}
           body: |
             Release  ${{ steps.get_version.outputs.version }}
-          draft: false
-          prerelease: false
+          #draft: false
+          #prerelease: false
 
       # - name: Repository Dispatch for appsAway
       #   uses: peter-evans/repository-dispatch@v1
