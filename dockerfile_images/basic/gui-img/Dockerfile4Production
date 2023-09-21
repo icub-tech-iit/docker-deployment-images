@@ -6,7 +6,7 @@
 ARG START_IMG="none"
 FROM $START_IMG as build
 
-LABEL maintainer="Vadim Tikhanoff <vadim.tikhanoff@iit.it>, Alexandre Antunes <alexandre.gomespereira@iit.it>"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 RUN apt-get update && \
     apt-get install -y \

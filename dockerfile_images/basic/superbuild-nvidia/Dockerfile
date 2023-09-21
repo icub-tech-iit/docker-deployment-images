@@ -5,7 +5,7 @@ FROM $START_IMG
 
 ARG METADATA_FILE
 
-LABEL maintainer="alexandre.gomespereira@iit.it, vadim.tikhanoff@iit.it, valentina.vasco@iit.it "
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 # Non-interactive installation mode
 ENV DEBIAN_FRONTEND=noninteractive

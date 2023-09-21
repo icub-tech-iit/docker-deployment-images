@@ -46,7 +46,7 @@ jobs:
           echo '${{ steps.file_changes.outputs.files}}'
           echo '${{ steps.file_changes.outputs.files_modified}}'
           echo '${{ steps.file_changes.outputs.files_added}}'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: find app name
         id: set-matrix
         run: |
@@ -307,12 +307,12 @@ jobs:
           id: release-version
 
   ##################### check out the correct version (master or release) ###############
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           if: matrix.version == 'master'
           with:
             ref: 'master'
 
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           if: matrix.version == 'release'
           with:
             ref: '${{ steps.release-version.outputs.tag }}'
@@ -578,12 +578,12 @@ jobs:
           id: release-version
 
   ##################### check out the correct version (master or release) ###############
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           if: matrix.version == 'master'
           with:
             ref: 'master'
 
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           if: matrix.version == 'release'
           with:
             ref: '${{ steps.release-version.outputs.tag }}'

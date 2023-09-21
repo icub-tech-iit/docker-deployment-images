@@ -3,7 +3,7 @@ ARG START_IMG="none"
 ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 FROM $START_IMG
 
-LABEL maintainer="alexandre.gomespereira@iit.it, vadim.tikhanoff@iit.it, valentina.vasco@iit.it "
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ENV DEBIAN_FRONTEND=noninteractive
 

@@ -1,3 +1,4 @@
+# TODO: remove or correct
 #start from image passed by argument during build process. Usually it is an ubuntu image plus mesa library.
 ARG START_IMG="none"
 ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
@@ -54,7 +55,7 @@ RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/icub-main &&\
     mkdir build && cd build &&\
     cmake .. \
         -DENABLE_icubmod_canBusFtSensor:BOOL=ON \
-        -DENABLE_icubmod_canBusAnalogSenor:BOOL=ON \
+        -DENABLE_icubmod_canBusAnalogSensor:BOOL=ON \
         -DENABLE_icubmod_embObjFTsensor:BOOL=ON \
         &&\
     make install -j5

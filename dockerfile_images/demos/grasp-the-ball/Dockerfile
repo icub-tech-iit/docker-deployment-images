@@ -4,7 +4,7 @@ ARG SOURCE_IMG="none"
 ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 FROM $SOURCE_IMG as builder
 
-LABEL maintainer="valentina.gaggero@iit.it, valentina.vasco@iit.it, laura.cavaliere@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 # Install the projects using the superbuild (From Diego)
 ARG PROJECTS_DIR=/projects
