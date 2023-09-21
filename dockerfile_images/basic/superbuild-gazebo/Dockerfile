@@ -11,7 +11,7 @@ ARG metadata="none"
     # Start from a ubuntu image plus mesa library recompiled with specific configuration
 FROM $START_IMG AS builder
 
-LABEL maintainer=" vadim.tikhanoff@iit.it, valentina.gaggero@iit.it, valentina.vasco@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ENV DEBIAN_FRONTEND=noninteractive
 

@@ -14,7 +14,7 @@ FROM $ROS_IMG as ros_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-LABEL maintainer="alexandre.gomespereira@iit.it, nicolo.genesio@iit.it, valentina.vasco@iit.it "
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ARG PROJECTS_DIR
 

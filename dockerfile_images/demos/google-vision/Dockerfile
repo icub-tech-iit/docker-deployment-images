@@ -4,7 +4,7 @@ ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 
 FROM $START_IMG as builder
 
-LABEL maintainer="laura.cavaliere@iit.it vadim.tikhanoff@iit.it" 
+LABEL maintainer="valentina.gaggero@iit.it jacopo.losi@iit.it" 
 
 # Install the projects using the superbuild (From Diego)
 

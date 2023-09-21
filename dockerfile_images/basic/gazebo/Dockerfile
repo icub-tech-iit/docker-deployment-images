@@ -3,7 +3,7 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 FROM $START_IMG
 
 
-LABEL maintainer="valentina.vasco@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 # Non-interactive installation mode
 ENV DEBIAN_FRONTEND=noninteractive

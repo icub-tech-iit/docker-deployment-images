@@ -1,3 +1,4 @@
+# TODO: remove or correct
 # Reference: https://github.com/utensils/docker-opengl/
 # This dockerfile produces an image of ubuntu-focal plus a compiled mesa library with device dri disabled, in order to use rendering by software.
 # In this way the producted image can be run on any pc.
@@ -6,7 +7,7 @@ ARG SOURCE_IMG="none"
 ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 FROM $SOURCE_IMG as human_sensing
 
-LABEL maintainer="laura.cavaliere@iit.it vadim.tikhanoff@iit.it" 
+LABEL maintainer="valentina.gaggero@iit.it jacopo.losi@iit.it" 
 
 ARG METADATA_FILE
 

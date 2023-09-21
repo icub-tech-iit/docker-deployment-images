@@ -1,4 +1,4 @@
-#
+# TODO: remove or correct
 #start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_devel_full
 ARG SOURCE_IMG="none"
 ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"

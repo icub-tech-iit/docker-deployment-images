@@ -5,7 +5,7 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 
 FROM $SOURCE_IMG as builder
 
-LABEL maintainer="valentina.vasco@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ARG PROJECTS_DIR=/projects
 ARG BRANCH=master
