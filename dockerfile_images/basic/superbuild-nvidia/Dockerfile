@@ -128,10 +128,10 @@ RUN mkdir ${PROJECTS_DIR} && cd ${PROJECTS_DIR} &&\
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
         -DYCM_USE_DEPRECATED:BOOL=OFF \
-        -DROBOTOLOGY_USES_GAZEBO=OFF \
+        -DROBOTOLOGY_USES_GAZEBO:BOOL=OFF \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DYCM_EP_INSTALL_DIR=${INSTALL_DIR} \
-        -DROBOTOLOGY_USES_PYTHON=ON \
+        -DROBOTOLOGY_USES_PYTHON:BOOL=ON \
         &&\
     # Build all the projects
     cmake --build . --target update-all -- -j4 &&\
