@@ -6,9 +6,10 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 #FROM $START_IMG as builder
 
 # Definitions
-ARG ROS_IMG=ros:foxy-ros-core
+ARG ROS_IMG=ros:humble-ros-core-jammy
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
-ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
+#ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
+ARG SUPERBUILD_IMG=ghcr.io/icub-tech-iit/docker-deployment-images/cd_superbuild-icubhead:master-unstable_sources
 ARG PROJECTS_DIR=/projects
 
 FROM $SUPERBUILD_IMG as superbuild_builder
@@ -16,7 +17,7 @@ FROM $ROS_IMG as ros_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-LABEL maintainer="alexandre.gomespereira@iit.it, nicolo.genesio@iit.it, valentina.vasco@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ARG PROJECTS_DIR
 
@@ -25,7 +26,7 @@ COPY --from=superbuild_builder /usr /usr
 COPY --from=superbuild_builder /etc /etc
 
 RUN apt update && apt install -y \
-    ros-foxy-rqt ros-foxy-rqt-common-plugins \
+    ros-humble-rqt ros-humble-rqt-common-plugins \
     # building tool for ros
     python3-colcon-common-extensions \
     wget \
@@ -65,13 +66,14 @@ RUN bash -c "source /opt/ros/$ROS_DISTRO/setup.bash &&\
     echo $AMENT_PREFIX_PATH &&\
     echo $AMENT_CURRENT_PREFIX &&\
     cd ${PROJECTS_DIR} &&\
-    git clone https://github.com/icub-tech-iit/yarp-ros2.git &&\
-    cd yarp-ros2 &&\
-    git checkout feat/canftwriteapi &&\
+    git clone -b master https://github.com/robotology/yarp-devices-ros2.git &&\
+    cd yarp-devices-ros2/ros2_interfaces_ws &&\
+    colcon build &&\
+    source install/setup.bash &&\
+    cd .. &&\
     mkdir build && cd build &&\
     cmake .. &&\
     make install -j5"
-
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD ["bash"]

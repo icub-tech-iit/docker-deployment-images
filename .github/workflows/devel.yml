@@ -5,6 +5,12 @@ on:
     schedule:
     # Run the job once a week
     - cron: '0 0 * * 0'
+
+env:
+  REGISTRY: ghcr.io
+  REPOSITORY_NAME: ${{ github.repository }}
+  REPOSITORY_OWNER: ${{ github.repository_owner }}
+  DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
     
 jobs:
   build:
@@ -22,4 +28,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           event-type: cron_trigger
-          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-icubhead-withuser superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo"}'
+          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-icubhead-withuser superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo superbuild-ros2"}'
+
+  trigger_children_build:
+      runs-on: [ubuntu-latest]
+      needs: [build]
+      if:  always() && ! cancelled()
+      steps:
+        # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
+        - name: Repository Dispatch for master
+          if: github.event.client_payload.type != 'repository_trigger'
+          uses: peter-evans/repository-dispatch@v2
+          with:
+            token: ${{ secrets.GITHUB_TOKEN  }}
+            repository: ${{ env.REPOSITORY_NAME }}
+            event-type: cron_trigger
+            client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
+

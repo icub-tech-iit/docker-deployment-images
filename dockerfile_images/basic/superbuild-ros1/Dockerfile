@@ -6,7 +6,8 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 
 ARG ROS_IMG=ros:noetic-ros-core
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
-ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
+#ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
+ARG SUPERBUILD_IMG=ghcr.io/icub-tech-iit/docker-deployment-images/cd_superbuild-icubhead:master-unstable_sources
 ARG PROJECTS_DIR=/projects
 
 FROM $SUPERBUILD_IMG as superbuild_builder
