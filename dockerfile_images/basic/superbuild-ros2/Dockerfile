@@ -6,10 +6,10 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 #FROM $START_IMG as builder
 
 # Definitions
-ARG ROS_IMG=ros:humble-ros-core-jammy
+ARG ROS_IMG=ros:humble-ros-base-jammy
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
 #ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
-ARG SUPERBUILD_IMG=ghcr.io/icub-tech-iit/docker-deployment-images/cd_superbuild-icubhead:master-unstable_sources
+ARG SUPERBUILD_IMG=test-superbuild-icubhead:jammy
 ARG PROJECTS_DIR=/projects
 
 FROM $SUPERBUILD_IMG as superbuild_builder
@@ -26,9 +26,7 @@ COPY --from=superbuild_builder /usr /usr
 COPY --from=superbuild_builder /etc /etc
 
 RUN apt update && apt install -y \
-    ros-humble-rqt ros-humble-rqt-common-plugins \
-    # building tool for ros
-    python3-colcon-common-extensions \
+    ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs \
     wget \
     unzip
 RUN echo 'source "/opt/ros/$ROS_DISTRO/setup.bash"' >> /usr/local/bin/setup_robotology_tdd.sh
@@ -50,9 +48,8 @@ RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
     make install -j5
 
 # TODO to be removed once it will merged on upstream branch
-RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/icub-main &&\
+RUN cd ${PROJECTS_DIR} && git clone -b master https://github.com/robotology/icub-main &&\
     cd icub-main &&\
-    git checkout devel &&\
     mkdir build && cd build &&\
     cmake .. \
         -DENABLE_icubmod_canBusFtSensor:BOOL=ON \

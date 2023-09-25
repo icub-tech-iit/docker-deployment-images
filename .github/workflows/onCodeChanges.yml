@@ -3,7 +3,7 @@ name: onCodeChanges
 on: 
     push:
         branches:
-            - feature/ubuntu2022
+            - master
         paths:
             - 'dockerfile_images/**'
     repository_dispatch:
