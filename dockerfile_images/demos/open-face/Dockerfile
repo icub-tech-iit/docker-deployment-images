@@ -48,7 +48,7 @@ WORKDIR /root/build-dep
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && apt-get install -qq -y \
-        cmake ninja-build pkg-config build-essential checkinstall\
+        wget cmake ninja-build pkg-config build-essential checkinstall\
         g++-8 &&\
     rm -rf /var/lib/apt/lists/* &&\
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8

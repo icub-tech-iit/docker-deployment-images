@@ -40,9 +40,8 @@ ARG BUILD_TYPE=Release
 ARG CMAKE_EXTRA_OPTIONS=-j2
 ARG INSTALL_DIR=/home/icub/install_dir
 ARG release="master"
-ARG sbtag="Stable"
+ARG sbtag="Unstable"
 ARG METADATA_FILE=/home/icub/install_dir/bin/setup_metadata.sh
-
 
 # Setup entrypoint
 ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
@@ -77,9 +76,28 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-sel
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DYCM_EP_INSTALL_DIR=${INSTALL_DIR} \
         -DENABLE_yarpmod_grabber:BOOL=ON \
+        # -DYCM_EP_DEVEL_MODE_icub_firmware_shared:BOOL=ON \
+        # -DYCM_EP_DEVEL_MODE_ICUB:BOOL=ON \
        &&\
     #Build all the projects &&\
     cmake --build . --target update-all -- -j4 &&\
+    #Build side working branches
+    # cd ${PROJECTS_DIR}/robotology-superbuild &&\
+    # cd src/icub_firmware_shared &&\
+    # git remote add ${fork_name} https://github.com/${fork_name}/icub-firmware-shared.git &&\
+    # git fetch ${fork_name} &&\
+    # git checkout -b ${debug_branch} --track ${fork_name}/${debug_branch} &&\
+    # git pull ${fork_name} ${debug_branch} &&\
+    # cd ${PROJECTS_DIR}/robotology-superbuild/build/src/icub_firmware_shared
+    # make clean && make -j4 && make install &&\
+    # cd ../ICUB &&\
+    # git remote add ${fork_name} https://github.com/${fork_name}/icub-main.git &&\
+    # git fetch ${fork_name} &&\
+    # git checkout -b ${debug_branch} --track ${fork_name}/${debug_branch} &&\
+    # git pull ${fork_name} ${debug_branch} &&\
+    # cd ${PROJECTS_DIR}/robotology-superbuild/build/src/ICUB
+    # make clean && make -j4 && make install &&\
+    # cd ${PROJECTS_DIR}/robotology-superbuild &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
 
@@ -124,4 +142,3 @@ RUN echo 'echo 'This images has release=$release and had been building with supe
 
 
 CMD ["bash"]
-
