@@ -22,4 +22,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           event-type: cron_trigger
-          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-pytorch superbuild-icubhead superbuild-icubhead-withuser superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo superbuild-ros2"}'
+          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-tensorflow-cpu superbuild-tensorflow-gpu superbuild-icubhead superbuild-icubhead-withuser superbuild-nvidia superbuild-nvidia-10.1 superbuild-gazebo blender gazebo superbuild-ros2"}'
