@@ -9,7 +9,7 @@ ARG sbtag="Unstable"
 ARG metadata="none"
 
     # Start from a ubuntu image plus mesa library recompiled with specific configuration
-FROM $START_IMG AS builder
+FROM $START_IMG as builder
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
@@ -32,10 +32,10 @@ ARG INSTALL_DIR
 RUN groupadd -K GID_MIN=100 -K GID_MAX=499 runtimeusers
   
     # Install dependencies given in documentation in superbuild
-RUN mkdir /etc/bash_completion.d/ && \
+RUN mkdir -p /etc/bash_completion.d/ && \
     # apt-get update and apt-get install should always be in the same layer to prevent caching errors
     apt-get update && \
-    apt-get install -qq --no-install-recommends -y \
+    apt-get install -qq --no-install-recommends -f -y \
         software-properties-common \
         apt-transport-https \
         apt-utils \

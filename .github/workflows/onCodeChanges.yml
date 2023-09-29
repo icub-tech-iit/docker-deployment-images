@@ -812,3 +812,4 @@ jobs:
             repository: ${{ env.REPOSITORY_NAME }}
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
+            

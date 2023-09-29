@@ -3,10 +3,10 @@
 ARG START_IMG="none"
 ARG SOURCE_IMG="none"
 
-FROM $SOURCE_IMG AS builder
+FROM $SOURCE_IMG as builder
 FROM $START_IMG  as secondstage
 
-LABEL maintainer="alexandre.gomespereira@iit.it, nicolo.genesio@iit.it, valentina.vasco@iit.it" 
+LABEL maintainer="jacopo.losi@iit.it, valentina.gaggero@iit.it" 
 
 COPY --from=builder /usr /usr
 COPY --from=builder /etc /etc

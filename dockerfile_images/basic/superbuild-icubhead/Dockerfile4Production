@@ -15,40 +15,35 @@ FROM $START_IMG
 ENV DEBIAN_FRONTEND=noninteractive
 
 #install here all runtime depencencies....
-RUN mkdir /etc/bash_completion.d/ &&\
+#need to actually check if, at the date 29/09/2023, all of these libraries are still correct and necessary or they can be pruned
+RUN mkdir -p /etc/bash_completion.d/ &&\
     apt-get update &&\
     apt-get install -y \
         # MISC
         bash-completion \
-        qt5-default \
+        qtbase5-dev qt5-qmake \
         vim \
-        #git \
-        #cmake \
-        #cmake-curses-gui \
-        #build-essential \
-        #core
+        # git \
+        # cmake \
+        # cmake-curses-gui \
+        # build-essential \
+        # core \
         coinor-libipopt1v5 \
         libboost-all-dev \
         libopencv-dev \
         libopencv-core-dev \
         libode-dev \
-        liblua5.1 \
+        liblua5.1-0 \
         lua5.1 \
         swig \
         libsdl1.2debian \
         libxml2\
         # YARP
-        libace-6.4.5 \
+        libace-7.0.6 \
         libeigen3-dev \
-        #libgsl0 \ ??? now commented, but is it usefull ?
         libedit2 \
-        #qtmultimedia5 \ ??? now commented, but is it usefull ?
         libqt5opengl5 \
-        #qttools5 \ ??? now commented, but is it usefull ?
-        #libtinyxml2-6 \
         libtinyxml-dev \
-        #yarp-gui
-        #qtbase5 \ ??? now commented, but is it usefull ?
         qml-module-qtquick2 \
         qml-module-qtquick-window2 \
         qml-module-qtmultimedia \
@@ -56,7 +51,7 @@ RUN mkdir /etc/bash_completion.d/ &&\
         qml-module-qtquick-controls \
         qml-module-qt-labs-folderlistmodel \
         qml-module-qt-labs-settings \
-        libdc1394-22 \  
+        libdc1394-25 \  
         &&\
         rm -rf /var/lib/apt/lists/*
 
