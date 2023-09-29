@@ -1,0 +1,28 @@
+#
+#start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_devel_full
+ARG SOURCE_IMG="none"
+ARG START_IMG="none"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+FROM $SOURCE_IMG as builder
+
+FROM $START_IMG
+
+LABEL maintainer="alexandre.gomespereira@iit.it, laura.cavaliere@iit.it, vadim.tikhanoff@iit.it" 
+
+COPY --from=builder /usr/share /usr/share
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /etc/alternatives /etc/alternatives
+COPY --from=builder /root/diff /root/diff
+COPY --from=builder /root/openface /root/openface 
+#COPY --from=builder  /root/openface/lib/local/LandmarkDetector/model/patch_experts/ \
+#    /root/openface/lib/local/LandmarkDetector/model/patch_experts/
+#COPY --from=builder  /root/build-dep /root/build-dep
+#COPY --from=builder /root/diff /root/diff
+
+
+## ==================== Building OpenCV ======================
+ENV OPENCV_VERSION=4.1.0
+
