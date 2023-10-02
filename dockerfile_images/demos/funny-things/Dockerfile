@@ -15,12 +15,12 @@ RUN mkdir /root/shared-files
 
 RUN apt update && \
     apt install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_17.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt install -y nodejs fuse luarocks
 
 RUN luarocks install luaposix
 
-RUN npm install -g npm@8.5.5
+RUN npm install -g npm@10.1.0
 
 ARG PROJECTS_DIR=/projects
 ARG CMAKE_EXTRA_OPTIONS=-j2

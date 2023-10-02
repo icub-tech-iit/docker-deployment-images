@@ -68,7 +68,7 @@ RUN apt-get update &&\
 
 
 
-RUN git clone -b v1.32.0 https://github.com/grpc/grpc.git &&\
+RUN git clone -b v1.59.0 https://github.com/grpc/grpc.git &&\
     cd grpc &&\
     git submodule update --init &&\
     mkdir build &&\
@@ -107,8 +107,7 @@ RUN if [ -f '/google-cloud-sdk/completion.zsh.inc' ]; then . '/google-cloud-sdk/
 
 # Needed for speechInteraction
 RUN git clone https://github.com/googleapis/googleapis.git &&\
-    apt-get install -y python-dev python3-pip &&\
-    apt-get install -y python3-dev &&\
+    apt-get install -y python3 python3-dev python3-pip &&\
     apt-get install -y default-jdk &&\
     cd googleapis &&\
     sed -i '36 i FLAGS+= --experimental_allow_proto3_optional' Makefile &&\

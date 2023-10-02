@@ -15,6 +15,7 @@ env:
   DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
   DEFAULT_USER: defaultuser
   IMAGE_PREFIX: cd_
+  SUPERBUILD_TAG: v2023.08.0
 
 jobs:
     debug:

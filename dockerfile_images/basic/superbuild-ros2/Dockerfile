@@ -9,10 +9,10 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 ARG ROS_IMG=ros:humble-ros-base-jammy
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
 #ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
-ARG SUPERBUILD_IMG=test-superbuild-icubhead:jammy
+# ARG SUPERBUILD_IMG=test-superbuild-icubhead:jammy
 ARG PROJECTS_DIR=/projects
 
-FROM $SUPERBUILD_IMG as superbuild_builder
+FROM $START_IMG as superbuild_builder
 FROM $ROS_IMG as ros_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
