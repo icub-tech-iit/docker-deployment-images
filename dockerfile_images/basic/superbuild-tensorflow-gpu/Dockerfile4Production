@@ -1,9 +1,9 @@
 #start from image passed by argument during build process. Usually it is an superbuild:full
 # this is the actual superbuild
-ARG SOURCE_IMG="none" 
+ARG SOURCE_IMG="none"
 
 # we need to get, if available, a "binaries" version - I think the non-devel ones are binaries
-ARG START_IMG="none" 
+ARG START_IMG="none"
 
 FROM $SOURCE_IMG as builder
 
@@ -22,25 +22,23 @@ RUN mkdir -p /etc/bash_completion.d/ &&\
     apt-get install -y \
         # MISC
         bash-completion \
-        qt5-default \
+        qtbase5-dev qt5-qmake \
         vim \
         #git \
         #cmake \
         #cmake-curses-gui \
         #build-essential \
         #core
-	coinor-libipopt-dev \
-        libboost-system-dev \
-        libboost-filesystem-dev \
-        libboost-thread-dev \
-        #libopencv-core3.2 \ commented because it not contains libopencv_imgproc.so.3.2 (CamCalib)
+        coinor-libipopt1v5 \
+        libboost-all-dev \
         libopencv-dev \
+        libopencv-core-dev \
         libode-dev \
-        liblua5.1 \
+        liblua5.1-0 \
         lua5.1 \
         swig \
-        libsdl1.2-dev \
-        libxml2-dev \
+        libsdl1.2debian \
+        libxml2\
         # YARP
         libace-dev \
         libeigen3-dev \

@@ -17,10 +17,9 @@ RUN mkdir -p /etc/bash_completion.d/ &&\
         # MISC
         bash-completion \
         git \
+        python3 \
+        libpython3-dev \
         python3-pybind11
-        
-        
-
 
 #Some definitions
 ARG PROJECTS_DIR=/projects
