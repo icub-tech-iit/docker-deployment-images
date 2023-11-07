@@ -7,7 +7,7 @@ ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
 
 # Definitions
 ARG ROS_IMG=ros:humble-ros-base-jammy
-ARG ROS_DISTRO="humble"
+ARG ROS_DISTRO=humble
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
 #ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
 # ARG SUPERBUILD_IMG=test-superbuild-icubhead:jammy
@@ -30,7 +30,7 @@ RUN apt update && apt install -y \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs \
     wget \
     unzip
-RUN echo 'source "/opt/ros/$ROS_DISTRO/setup.bash"' >> /usr/local/bin/setup_robotology_tdd.sh
+RUN echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/setup_robotology_tdd.sh
 
 WORKDIR /root
 RUN wget https://github.com/icub-tech-iit/appsAway/files/8919271/FT_setup.zip
