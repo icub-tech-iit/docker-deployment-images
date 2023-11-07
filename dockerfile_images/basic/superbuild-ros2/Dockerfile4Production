@@ -10,6 +10,7 @@ LABEL maintainer="jacopo.losi@iit.it, valentina.gaggero@iit.it"
 
 COPY --from=builder /usr /usr
 COPY --from=builder /etc /etc
+COPY --from=builder /opt /opt
 
 FROM scratch
 
