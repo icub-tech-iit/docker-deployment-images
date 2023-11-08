@@ -23,7 +23,7 @@ COPY --from=superbuild_builder /usr /usr
 COPY --from=superbuild_builder /etc /etc
 
 RUN apt update && apt install -y ros-noetic-rqt ros-noetic-rqt-common-plugins wget
-RUN echo 'source "/opt/ros/$ROS_DISTRO/setup.bash"' >> /usr/local/bin/setup_robotology_tdd.sh
+RUN echo 'source "/opt/ros/noetic/setup.bash"' >> /usr/local/bin/setup_robotology_tdd.sh
 
 WORKDIR /root
 RUN wget https://github.com/icub-tech-iit/appsAway/files/8919271/FT_setup.zip
