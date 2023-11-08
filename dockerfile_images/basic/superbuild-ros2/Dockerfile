@@ -27,7 +27,7 @@ COPY --from=superbuild_builder /usr /usr
 COPY --from=superbuild_builder /etc /etc
 
 RUN apt update && apt install -y \
-    ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs \
+    ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
     wget \
     unzip
 RUN echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/setup_robotology_tdd.sh
