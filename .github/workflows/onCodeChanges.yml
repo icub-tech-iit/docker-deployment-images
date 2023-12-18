@@ -333,10 +333,11 @@ jobs:
 
   ##################### Command to set the tag for the date argument ######################
         - name: set date argument for Docker build
+          id: get_date
           run: |
             echo "$(date +'%d/%m/%Y')" > DATE_
             echo "metadata=$(cat DATE_)" > DATE_TAG
-            echo $(cat DATE_TAG)
+            echo $(cat DATE_TAG) >> $GITHUB_OUTPUT
           
  ##################### Here we check the release version and replace Custom with stable only for the image name ######################
         - name: Get release / master version
