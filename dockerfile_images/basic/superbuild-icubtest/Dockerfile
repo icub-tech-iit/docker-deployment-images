@@ -1,26 +1,28 @@
 #here add all stuff necessary to run icub-tests
 #start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_source
 ARG SOURCE_IMG="none"
-ARG INSTALL_DIR="/usr/local"
-#ARG PROJECTS_DIR=/projects
-ARG release="master"
-ARG sbtag="Stable"
-ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
+ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
+ARG INSTALL_DIR=/usr/local
+ARG PROJECTS_DIR=/projects
+ARG release="none"
+ARG sbtag="none"
+ARG metadata="none"
 
+# Stage 1: build stage
 FROM $SOURCE_IMG as builder
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
-
-
-ARG PROJECTS_DIR=/projects
-ARG CMAKE_GENERATOR="Unix Makefiles"
-ARG BUILD_TYPE=Release
-ARG CMAKE_EXTRA_OPTIONS=-j2
-ARG INSTALL_DIR="/usr/local/"
+ARG METADATA_FILE
+ARG INSTALL_DIR
+ARG PROJECTS_DIR
 ARG release
 ARG sbtag
-ARG METADATA_FILE
+ARG metadata
+
+ARG CMAKE_GENERATOR="Unix Makefiles"
+ARG BUILD_TYPE=Release
+ARG CMAKE_EXTRA_OPTIONS=-j4
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -44,11 +46,12 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
     cd build &&\
     cmake .. \
         -G "$CMAKE_GENERATOR" \
+        -DBUILD_TESTING:BOOL=ON \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
+        -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
         -DROBOTOLOGY_ENABLE_ROBOT_TESTING:BOOL=ON \
-#        -DYCM_USE_DEPRECATED:BOOL=OFF \ because deprecated
         -DROBOTOLOGY_USES_GAZEBO=OFF \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DYCM_EP_INSTALL_DIR=${INSTALL_DIR} \
@@ -57,14 +60,20 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
         cmake --build . --target update-all -- -j4 &&\
         cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
-ARG metadata="none"
+# Stage 2: scratch stage
+# This should theoretically help reducing the size of the final image
+FROM scratch
+COPY --from=secondstage / /
+
+ARG metadata
+ARG METADATA_FILE
 
 ENV img_metadata=${metadata}
 
 RUN echo 'export img_metadata=${metadata}'  > $METADATA_FILE
 RUN echo 'echo 'This image was built on $metadata ' '  >> $METADATA_FILE
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
  

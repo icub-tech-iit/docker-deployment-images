@@ -4,7 +4,7 @@ ARG START_IMG="none"
 ARG SOURCE_IMG="none"
 
 FROM $SOURCE_IMG AS builder
-FROM $START_IMG  as secondstage
+FROM $START_IMG  AS secondstage
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it" 
 

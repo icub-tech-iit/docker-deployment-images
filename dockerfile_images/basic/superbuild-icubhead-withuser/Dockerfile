@@ -1,7 +1,14 @@
 #start from image passed by argument during build process. Usually it is an ubuntu image plus mesa library.
 ARG START_IMG="none"
+ARG INSTALL_DIR=/home/icub/install_dir
+ARG PROJECTS_DIR=/home/icub/projects
+ARG METADATA_FILE=/home/icub/install_dir/bin/setup_metadata.sh
+ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
+ARG release="none"
+ARG sbtag="none"
+ARG metadata="none"
 
-FROM $START_IMG
+FROM $START_IMG AS builder
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
@@ -33,29 +40,28 @@ RUN sudo mkdir /etc/bash_completion.d/ &&\
         vim \
         apt-utils
 
+# Re-declarations
+ARG METADATA_FILE
+ARG INSTALL_DIR
+ARG PROJECTS_DIR
+ARG ROBOTOLOGY_INITIALIZATION_FILE
+ARG release
+ARG sbtag
+ARG metadata
 
 #Some definitions
 ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG BUILD_TYPE=Release
 ARG CMAKE_EXTRA_OPTIONS=-j2
-ARG INSTALL_DIR=/home/icub/install_dir
-ARG release="master"
-ARG sbtag="Stable"
-ARG METADATA_FILE=/home/icub/install_dir/bin/setup_metadata.sh
 
 
 # Setup entrypoint
-ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
-
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 RUN sudo chown -R icub: /usr/local/bin/entrypoint.sh
 RUN sudo chown -R icub: /usr/local/bin/setup_robotology_tdd.sh
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
-
-
-ARG PROJECTS_DIR=/home/icub/projects
 
 #ENV DEBIAN_FRONTEND=noninteractive is not sufficient
 RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections &&\
@@ -83,26 +89,24 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-sel
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
 
- RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
- RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
+ RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE &&\
+     echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
+
+# Stage 2: secondstage stage
+FROM $START_IMG AS secondstage
+
+ARG METADATA_FILE
+ARG PROJECTS_DIR
+ARG release
+ARG sbtag
+ARG metadata
+ARG INSTALL_DIR=/usr/local
+
+COPY --from=builder / /
 
 # # The bashrc is read only when opening an interactive shell. Let other projects find packages contained
 # # in the superbuild.
  ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
-
-#add checkRobotInterface
-RUN cd ${PROJECTS_DIR} &&\
-    git clone https://github.com/icub-tech-iit/appsAway.git && \
-    cd  appsAway/modules/checkRobotInterface && \
-    mkdir build && cd build && \
-    cmake .. \
-        -G "$CMAKE_GENERATOR" \
-        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        &&\
-    cmake --build . -- ${CMAKE_EXTRA_OPTIONS} && \
-    cp ./checkRobotInterface /home/icub/install_dir/bin
-
-
 
 #The EXPOSE instruction does not actually publish the port.
 #It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
@@ -114,13 +118,11 @@ ENV QT_X11_NO_MITSHM 1
 ENV YARP_COLORED_OUTPUT 1
 
 
-
-ARG metadata="none"
-
 ENV img_metadata=${metadata}
-RUN echo "File metadata = ${METADATA_FILE}"
-RUN echo 'export img_metadata=${metadata}'  >> $METADATA_FILE
-RUN echo 'echo 'This images has release=$release and had been building with superbuild_tag=$sbtag. Metadata=$metadata ' '  >> $METADATA_FILE
+
+RUN echo "File metadata = ${METADATA_FILE}" &&\
+    echo 'export img_metadata=${metadata}'  >> $METADATA_FILE &&\
+    echo 'echo 'This images has release=$release and had been building with superbuild_tag=$sbtag. Metadata=$metadata ' '  >> $METADATA_FILE
 
 
 CMD ["bash"]

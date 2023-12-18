@@ -10,7 +10,6 @@ ARG ROS_IMG=ros:humble-ros-base-jammy
 ARG ROS_DISTRO=humble
 # TODO Now it is working only with icub-main devel START_IMG IGNORED
 #ARG SUPERBUILD_IMG=icubteamcode/superbuild-icubhead:master-unstable_sources
-# ARG SUPERBUILD_IMG=test-superbuild-icubhead:jammy
 ARG PROJECTS_DIR=/projects
 
 FROM $START_IMG as superbuild_builder
@@ -20,6 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
+ARG ROS_DISTRO
 ARG PROJECTS_DIR
 
 COPY --from=superbuild_builder ${PROJECTS_DIR} ${PROJECTS_DIR}
@@ -33,6 +33,14 @@ RUN apt update && apt install -y \
     unzip
 RUN echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/setup_robotology_tdd.sh
 
+
+FROM $ROS_IMG AS secondstage
+
+ARG ROS_DISTRO
+ARG PROJECTS_DIR
+
+COPY --from=ros_builder / /
+
 WORKDIR /root
 RUN wget https://github.com/icub-tech-iit/appsAway/files/8919271/FT_setup.zip
 RUN unzip FT_setup
@@ -42,23 +50,23 @@ RUN wget https://github.com/icub-tech-iit/appsAway/files/9112222/FT_setup_can.zi
 RUN unzip FT_setup_can
 
 # TODO to be removed once it will merged on upstream branch
-# RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
-#     cd yarp &&\
-#     git checkout master &&\
-#     mkdir build && cd build &&\
-#     cmake .. &&\
-#     make install -j5
+RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
+    cd yarp &&\
+    git checkout master &&\
+    mkdir build && cd build &&\
+    cmake .. &&\
+    make install -j5
 
 # TODO to be removed once it will merged on upstream branch
-# RUN cd ${PROJECTS_DIR} && git clone -b master https://github.com/robotology/icub-main &&\
-#     cd icub-main &&\
-#     mkdir build && cd build &&\
-#     cmake .. \
-#         -DENABLE_icubmod_canBusFtSensor:BOOL=OFF \
-#         -DENABLE_icubmod_canBusAnalogSensor:BOOL=OFF \
-#         -DENABLE_icubmod_embObjFTsensor:BOOL=ON \
-#         &&\
-#     make install -j5
+RUN cd ${PROJECTS_DIR} && git clone -b master https://github.com/robotology/icub-main &&\
+    cd icub-main &&\
+    mkdir build && cd build &&\
+    cmake .. \
+        -DENABLE_icubmod_canBusFtSensor:BOOL=ON \
+        -DENABLE_icubmod_canBusAnalogSensor:BOOL=ON \
+        -DENABLE_icubmod_embObjFTsensor:BOOL=ON \
+        &&\
+    make install -j5
 
 
 RUN bash -c "source /opt/ros/$ROS_DISTRO/setup.bash &&\
@@ -72,7 +80,7 @@ RUN bash -c "source /opt/ros/$ROS_DISTRO/setup.bash &&\
     cd .. &&\
     mkdir build && cd build &&\
     cmake .. &&\
-    make install -j5"
+    make install -j4"
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD ["bash"]

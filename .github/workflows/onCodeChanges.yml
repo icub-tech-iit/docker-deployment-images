@@ -333,10 +333,11 @@ jobs:
 
   ##################### Command to set the tag for the date argument ######################
         - name: set date argument for Docker build
+          id: get_date
           run: |
             echo "$(date +'%d/%m/%Y')" > DATE_
             echo "metadata=$(cat DATE_)" > DATE_TAG
-            echo $(cat DATE_TAG)
+            echo $(cat DATE_TAG) >> $GITHUB_OUTPUT
           
  ##################### Here we check the release version and replace Custom with stable only for the image name ######################
         - name: Get release / master version
@@ -536,7 +537,7 @@ jobs:
 
         # - name: Trigger testing pipeline for source image
         #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
-        #   uses: peter-evans/repository-dispatch@v1
+        #   uses: peter-evans/repository-dispatch@v3
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
         #     repository: {{ }}
@@ -545,7 +546,7 @@ jobs:
 
         # - name: Trigger testing pipeline for binary image
         #   if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled() 
-        #   uses: peter-evans/repository-dispatch@v1
+        #   uses: peter-evans/repository-dispatch@v3
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
         #     repository: {{ }}
@@ -799,7 +800,7 @@ jobs:
         # this step ensures that the children are built with the "release" version, which is used when the "repository_trigger" is sent
         - name: Repository Dispatch for release
           if: github.event.client_payload.type == 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v2
+          uses: peter-evans/repository-dispatch@v3
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
@@ -809,7 +810,7 @@ jobs:
         # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
         - name: Repository Dispatch for master
           if: github.event.client_payload.type != 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v2
+          uses: peter-evans/repository-dispatch@v3
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
