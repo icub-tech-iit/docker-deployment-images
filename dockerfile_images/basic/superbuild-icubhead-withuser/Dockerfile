@@ -2,8 +2,8 @@
 ARG START_IMG="none"
 
 ARG HOME_DIR=/home/icub
-ARG INSTALL_DIR=${HOME_DIR}/install_dir
 ARG PROJECTS_DIR=${HOME_DIR}/projects
+ARG INSTALL_DIR=${PROJECTS_DIR}/robotology-superbuild/build/install
 ARG release="master"
 ARG sbtag="Stable"
 ARG metadata="data"
@@ -11,7 +11,7 @@ ARG METADATA_FILE=${INSTALL_DIR}/bin/setup_metadata.sh
 ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
 ARG USERNAME=icub
 
-FROM $START_IMG as builder
+FROM $START_IMG AS builder
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
@@ -42,13 +42,14 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # From here on all commands will be executed as $USERNAME user until FROM declaration
 USER $USERNAME
 
-RUN sudo mkdir /etc/bash_completion.d/ &&\
+RUN sudo mkdir -p /etc/bash_completion.d/ &&\
     sudo apt-get update &&\
     sudo apt-get install -y \
         # MISC
         bash-completion \
         git \
         vim \
+        apt-transport-https \
         apt-utils
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -59,39 +60,35 @@ RUN sudo chown -R icub: /usr/local/bin/setup_robotology_tdd.sh
 #Some definitions
 ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG BUILD_TYPE=Release
-ARG CMAKE_EXTRA_OPTIONS=-j2
+ARG CMAKE_EXTRA_OPTIONS=-j4
 
 #ENV DEBIAN_FRONTEND=noninteractive is not sufficient
 RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections &&\
     mkdir ${PROJECTS_DIR} && cd ${PROJECTS_DIR} &&\
     git clone https://github.com/robotology/robotology-superbuild.git &&\
     cd robotology-superbuild &&\
-    git checkout ${release} -b ${release}_branch &&\
+    git checkout ${release} &&\
     sudo ./scripts/install_apt_dependencies.sh &&\
     mkdir build && cd build &&\
       cmake .. \
         -G "$CMAKE_GENERATOR" \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
+        -DFETCHCONTENT_QUIET:BOOL=ON \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
         -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
-        -DROBOTOLOGY_ENABLE_DYNAMICS:BOOL=ON \
-        -DYCM_USE_DEPRECATED:BOOL=OFF \
         -DROBOTOLOGY_USES_GAZEBO=OFF \
+        -DYCM_USE_CMAKE_PROPOSED:BOOL=ON \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
-        -DYCM_EP_INSTALL_DIR=${INSTALL_DIR} \
-        -DENABLE_yarpmod_grabber:BOOL=ON \
+        -DFETCHCONTENT_QUIET:BOOL=ON \
        &&\
-    #Build all the projects &&\
-    cmake --build . --target update-all -- ${CMAKE_EXTRA_OPTIONS} &&\
+    #Build all the projects
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
-FROM scratch 
+FROM scratch
 
 ARG PROJECTS_DIR
-ARG CMAKE_GENERATOR="Unix Makefiles"
-ARG BUILD_TYPE=Release
-ARG CMAKE_EXTRA_OPTIONS=-j2
 ARG INSTALL_DIR
 ARG release
 ARG sbtag
@@ -108,27 +105,14 @@ COPY --from=builder / /
 # # in the superbuild.
 ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
 
-#add checkRobotInterface
-RUN cd ${PROJECTS_DIR} &&\
-    git clone https://github.com/icub-tech-iit/appsAway.git && \
-    cd  appsAway/modules/checkRobotInterface && \
-    mkdir build && cd build && \
-    cmake .. \
-        -G "$CMAKE_GENERATOR" \
-        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        &&\
-    cmake --build . -- ${CMAKE_EXTRA_OPTIONS} && \
-    cp ./checkRobotInterface ${INSTALL_DIR}/bin
-
-
 #The EXPOSE instruction does not actually publish the port.
 #It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
 #To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
 EXPOSE 10000/tcp 10000/udp
 
 # Some QT-Apps don't show controls without this
-ENV QT_X11_NO_MITSHM 1
-ENV YARP_COLORED_OUTPUT 1
+ENV QT_X11_NO_MITSHM=1
+ENV YARP_COLORED_OUTPUT=1
 
 RUN echo 'echo 'This images has release=$release and is built with superbuild_tag=$sbtag. Metadata=$metadata ' '  >> $METADATA_FILE
 
