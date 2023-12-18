@@ -75,7 +75,7 @@ ARG ROBOTOLOGY_INITIALIZATION_FILE
 
 RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
  

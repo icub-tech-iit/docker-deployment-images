@@ -42,14 +42,15 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # From here on all commands will be executed as $USERNAME user until FROM declaration
 USER $USERNAME
 
-RUN sudo mkdir -p /etc/bash_completion.d/ &&\
+RUN sudo mkdir /etc/bash_completion.d/ &&\
     sudo apt-get update &&\
     sudo apt-get install -y \
         # MISC
+        build-essential \
+        libssl-dev \
         bash-completion \
         git \
         vim \
-        apt-transport-https \
         apt-utils
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -72,18 +73,16 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-sel
     mkdir build && cd build &&\
       cmake .. \
         -G "$CMAKE_GENERATOR" \
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
-        -DFETCHCONTENT_QUIET:BOOL=ON \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
         -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
         -DROBOTOLOGY_USES_GAZEBO=OFF \
-        -DYCM_USE_CMAKE_PROPOSED:BOOL=ON \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DFETCHCONTENT_QUIET:BOOL=ON \
        &&\
-    #Build all the projects
+    #Build all the projects 
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
 FROM scratch
@@ -122,4 +121,3 @@ RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
 CMD ["bash"]
-

@@ -45,7 +45,7 @@ COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 RUN mkdir ${PROJECTS_DIR} && cd ${PROJECTS_DIR} &&\
     git clone https://github.com/robotology/robotology-superbuild.git &&\
     cd robotology-superbuild &&\
-    git checkout ${release} -b ${release}_branch &&\
+    git checkout ${release} &&\
     ./scripts/install_apt_dependencies.sh &&\
     mkdir build && cd build &&\
     cmake .. \
