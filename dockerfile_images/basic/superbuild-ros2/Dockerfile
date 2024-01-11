@@ -28,6 +28,7 @@ COPY --from=superbuild_builder /etc /etc
 
 RUN apt update && apt install -y \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
+    ros-humble-rmw-cyclonedds-cpp ros-humble-ament-cmake-clang-format ros-humble-hardware-interface ros-humble-controller-manager ros-humble-ros2-control \
     wget \
     unzip
 RUN echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/setup_robotology_tdd.sh
@@ -41,23 +42,23 @@ RUN wget https://github.com/icub-tech-iit/appsAway/files/9112222/FT_setup_can.zi
 RUN unzip FT_setup_can
 
 # TODO to be removed once it will merged on upstream branch
-RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
-    cd yarp &&\
-    git checkout master &&\
-    mkdir build && cd build &&\
-    cmake .. &&\
-    make install -j5
+# RUN cd ${PROJECTS_DIR} && git clone https://github.com/robotology/yarp &&\
+#     cd yarp &&\
+#     git checkout master &&\
+#     mkdir build && cd build &&\
+#     cmake .. &&\
+#     make install -j5
 
 # TODO to be removed once it will merged on upstream branch
-RUN cd ${PROJECTS_DIR} && git clone -b master https://github.com/robotology/icub-main &&\
-    cd icub-main &&\
-    mkdir build && cd build &&\
-    cmake .. \
-        -DENABLE_icubmod_canBusFtSensor:BOOL=ON \
-        -DENABLE_icubmod_canBusAnalogSensor:BOOL=ON \
-        -DENABLE_icubmod_embObjFTsensor:BOOL=ON \
-        &&\
-    make install -j5
+# RUN cd ${PROJECTS_DIR} && git clone -b master https://github.com/robotology/icub-main &&\
+#     cd icub-main &&\
+#     mkdir build && cd build &&\
+#     cmake .. \
+#         -DENABLE_icubmod_canBusFtSensor:BOOL=OFF \
+#         -DENABLE_icubmod_canBusAnalogSensor:BOOL=OFF \
+#         -DENABLE_icubmod_embObjFTsensor:BOOL=ON \
+#         &&\
+#     make install -j5
 
 
 RUN bash -c "source /opt/ros/$ROS_DISTRO/setup.bash &&\
