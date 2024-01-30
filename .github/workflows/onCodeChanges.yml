@@ -276,7 +276,7 @@ jobs:
         children_flag: ${{ steps.set-matrix.outputs.children_flag_output }}
         version: ${{ steps.set-matrix.outputs.version }}
 
-    build_and_push_superbuild:
+    build_push:
       runs-on: [ubuntu-latest]
       needs: check_files
       if: needs.check_files.outputs.superbuild_flag == 'true'
@@ -536,7 +536,7 @@ jobs:
 
         # - name: Trigger testing pipeline for source image
         #   if: steps.build-sources.outcome == 'success' && steps.push-sources.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled()
-        #   uses: peter-evans/repository-dispatch@v1
+        #   uses: peter-evans/repository-dispatch@v3
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
         #     repository: {{ }}
@@ -545,7 +545,7 @@ jobs:
 
         # - name: Trigger testing pipeline for binary image
         #   if: steps.build-binaries.outcome == 'success' && steps.push-binaries.outcome == 'success' && steps.get_args.outputs.demos_flag_output == 'true' && ! cancelled() 
-        #   uses: peter-evans/repository-dispatch@v1
+        #   uses: peter-evans/repository-dispatch@v3
         #   with:
         #     token: ${{ secrets.GITHUB_TOKEN  }}
         #     repository: {{ }}
@@ -557,7 +557,7 @@ jobs:
       #     version_name: ${{ steps.get_version.outputs.VERSION }}
       #     tag_name: ${{ steps.get_version.outputs.TAG }}
 
-    build_and_push_custom:
+    build_push_custom:
       runs-on: [ubuntu-latest]
       needs: check_files
       if: needs.check_files.outputs.custom_flag == 'true'
@@ -792,14 +792,24 @@ jobs:
 
     trigger_children_build:
       runs-on: [ubuntu-latest]
-      needs: [build_and_push_custom, build_and_push_superbuild, check_files]
+      needs: [build_push_custom, build_push, check_files]
       if:  always() && needs.check_files.outputs.children_flag == 'true' && ! cancelled()
       steps:
+        - name: Get Token
+          id: get_workflow_token
+          uses: tibdex/github-app-token@v2
+          with:
+            private_key: ${{ secrets.ICUB_TECH_IIT_APP_KEY }}
+            app_id: ${{ secrets.ICUB_TECH_IIT_APP_ID }}
+            installation_retrieval_mode: repository
+            installation_retrieval_payload: icub-tech-iit/code
       
         # this step ensures that the children are built with the "release" version, which is used when the "repository_trigger" is sent
         - name: Repository Dispatch for release
           if: github.event.client_payload.type == 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v2
+          uses: peter-evans/repository-dispatch@v3
+          # env:
+          #   GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
@@ -809,7 +819,9 @@ jobs:
         # in the case where we are building "master" versions, we need to send a trigger that build only master, e.g.: "cron_trigger"
         - name: Repository Dispatch for master
           if: github.event.client_payload.type != 'repository_trigger'
-          uses: peter-evans/repository-dispatch@v2
+          uses: peter-evans/repository-dispatch@v3
+          # env:
+          #   GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
