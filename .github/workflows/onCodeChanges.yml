@@ -795,21 +795,10 @@ jobs:
       needs: [build_push_custom, build_push, check_files]
       if:  always() && needs.check_files.outputs.children_flag == 'true' && ! cancelled()
       steps:
-        - name: Get Token
-          id: get_workflow_token
-          uses: tibdex/github-app-token@v2
-          with:
-            private_key: ${{ secrets.ICUB_TECH_IIT_APP_KEY }}
-            app_id: ${{ secrets.ICUB_TECH_IIT_APP_ID }}
-            installation_retrieval_mode: repository
-            installation_retrieval_payload: icub-tech-iit/code
-      
         # this step ensures that the children are built with the "release" version, which is used when the "repository_trigger" is sent
         - name: Repository Dispatch for release
           if: github.event.client_payload.type == 'repository_trigger'
           uses: peter-evans/repository-dispatch@v3
-          # env:
-          #   GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
@@ -820,8 +809,6 @@ jobs:
         - name: Repository Dispatch for master
           if: github.event.client_payload.type != 'repository_trigger'
           uses: peter-evans/repository-dispatch@v3
-          # env:
-          #   GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           with:
             token: ${{ secrets.GITHUB_TOKEN  }}
             repository: ${{ env.REPOSITORY_NAME }}
