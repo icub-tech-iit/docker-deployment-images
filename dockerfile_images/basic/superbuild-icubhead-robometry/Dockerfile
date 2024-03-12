@@ -1,11 +1,11 @@
 #here add all stuff necessary to run icub-tests
 #start from image passed by argument during build process. Usually it is icubteamcode/superbuild:master-unstable_source
 ARG SOURCE_IMG="none"
-ARG PROJECTS_DIR="/projects"
-ARG INSTALL_DIR="/usr/local"
+ARG PROJECTS_DIR="/home/icub/projects"
+ARG INSTALL_DIR="/home/icub/install_dir"
 ARG release="none"
 ARG sbtag="none"
-ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
+ARG METADATA_FILE=${INSTALL_DIR}/bin/setup_metadata.sh
 
 FROM $SOURCE_IMG as superbuild_builder
 
