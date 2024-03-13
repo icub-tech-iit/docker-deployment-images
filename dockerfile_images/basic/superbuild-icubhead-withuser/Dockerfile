@@ -1,16 +1,33 @@
 #start from image passed by argument during build process. Usually it is an ubuntu image plus mesa library.
 ARG START_IMG="none"
 
-FROM $START_IMG
+ARG HOME_DIR=/home/icub
+ARG INSTALL_DIR=${HOME_DIR}/install_dir
+ARG PROJECTS_DIR=${HOME_DIR}/projects
+ARG release="master"
+ARG sbtag="Stable"
+ARG metadata="data"
+ARG METADATA_FILE=${INSTALL_DIR}/bin/setup_metadata.sh
+ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
+ARG USERNAME=icub
+
+FROM $START_IMG as builder
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG USERNAME=icub
+ARG INSTALL_DIR
+ARG PROJECTS_DIR
+ARG release
+ARG sbtag
+ARG METADATA_FILE
+ARG ROBOTOLOGY_INITIALIZATION_FILE
+
+# Define UID and GID
+ARG USERNAME
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-
 
 RUN apt-get update \
     && apt-get install -y sudo \
@@ -22,6 +39,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
  
 
+# From here on all commands will be executed as $USERNAME user until FROM declaration
 USER $USERNAME
 
 RUN sudo mkdir /etc/bash_completion.d/ &&\
@@ -33,29 +51,15 @@ RUN sudo mkdir /etc/bash_completion.d/ &&\
         vim \
         apt-utils
 
-
-#Some definitions
-ARG CMAKE_GENERATOR="Unix Makefiles"
-ARG BUILD_TYPE=Release
-ARG CMAKE_EXTRA_OPTIONS=-j2
-ARG INSTALL_DIR=/home/icub/install_dir
-ARG release="master"
-ARG sbtag="Stable"
-ARG METADATA_FILE=/home/icub/install_dir/bin/setup_metadata.sh
-
-
-# Setup entrypoint
-ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
-
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 RUN sudo chown -R icub: /usr/local/bin/entrypoint.sh
 RUN sudo chown -R icub: /usr/local/bin/setup_robotology_tdd.sh
 
-ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
-
-
-ARG PROJECTS_DIR=/home/icub/projects
+#Some definitions
+ARG CMAKE_GENERATOR="Unix Makefiles"
+ARG BUILD_TYPE=Release
+ARG CMAKE_EXTRA_OPTIONS=-j2
 
 #ENV DEBIAN_FRONTEND=noninteractive is not sufficient
 RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections &&\
@@ -79,16 +83,30 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-sel
         -DENABLE_yarpmod_grabber:BOOL=ON \
        &&\
     #Build all the projects &&\
-    cmake --build . --target update-all -- -j4 &&\
+    cmake --build . --target update-all -- ${CMAKE_EXTRA_OPTIONS} &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
+FROM scratch 
 
- RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
- RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
+ARG PROJECTS_DIR
+ARG CMAKE_GENERATOR="Unix Makefiles"
+ARG BUILD_TYPE=Release
+ARG CMAKE_EXTRA_OPTIONS=-j2
+ARG INSTALL_DIR
+ARG release
+ARG sbtag
+ARG METADATA_FILE
+ARG ROBOTOLOGY_INITIALIZATION_FILE
+ARG metadata
+ARG USERNAME
+
+USER $USERNAME
+
+COPY --from=builder / /
 
 # # The bashrc is read only when opening an interactive shell. Let other projects find packages contained
 # # in the superbuild.
- ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
+ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
 
 #add checkRobotInterface
 RUN cd ${PROJECTS_DIR} &&\
@@ -100,8 +118,7 @@ RUN cd ${PROJECTS_DIR} &&\
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS} && \
-    cp ./checkRobotInterface /home/icub/install_dir/bin
-
+    cp ./checkRobotInterface ${INSTALL_DIR}/bin
 
 
 #The EXPOSE instruction does not actually publish the port.
@@ -113,15 +130,12 @@ EXPOSE 10000/tcp 10000/udp
 ENV QT_X11_NO_MITSHM 1
 ENV YARP_COLORED_OUTPUT 1
 
+RUN echo 'echo 'This images has release=$release and is built with superbuild_tag=$sbtag. Metadata=$metadata ' '  >> $METADATA_FILE
 
+RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
+RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
 
-ARG metadata="none"
-
-ENV img_metadata=${metadata}
-RUN echo "File metadata = ${METADATA_FILE}"
-RUN echo 'export img_metadata=${metadata}'  >> $METADATA_FILE
-RUN echo 'echo 'This images has release=$release and had been building with superbuild_tag=$sbtag. Metadata=$metadata ' '  >> $METADATA_FILE
-
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
 CMD ["bash"]
 
