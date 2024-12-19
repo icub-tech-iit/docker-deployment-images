@@ -104,6 +104,7 @@ COPY --from=builder / /
 # # The bashrc is read only when opening an interactive shell. Let other projects find packages contained
 # # in the superbuild.
 ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
+# ENV YCM_EP_INSTALL_DIR=${INSTALL_DIR}
 
 #The EXPOSE instruction does not actually publish the port.
 #It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
