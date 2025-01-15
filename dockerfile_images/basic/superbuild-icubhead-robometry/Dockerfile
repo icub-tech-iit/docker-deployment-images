@@ -39,6 +39,9 @@ COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 RUN sudo chown -R icub: /usr/local/bin/entrypoint.sh
 RUN sudo chown -R icub: /usr/local/bin/setup_robotology_tdd.sh
 
+RUN git config --global user.email "icub@icub.it" &&\
+    git config --global user.name "icub"
+
 # Some other definitions
 ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG BUILD_TYPE=Release
@@ -50,12 +53,11 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
     -G "$CMAKE_GENERATOR" \
         -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        -DNON_INTERACTIVE_BUILD:BOOL=ON \
+        -DNON_INTERACTIVE_BUILD:BOOL=OFF \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
         -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
         # for enabling robometry
         -DROBOTOLOGY_ENABLE_DYNAMICS:BOOL=ON \ 
-        -DYCM_USE_DEPRECATED:BOOL=OFF \
         -DROBOTOLOGY_USES_GAZEBO=OFF \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DYCM_USE_CMAKE_PROPOSED=ON \
