@@ -4,9 +4,11 @@ ARG SOURCE_IMG="none"
 ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 ARG PROJECTS_DIR=/projects
 ARG INSTALL_DIR=${PROJECTS_DIR}/robotology-superbuild/build/install
-ARG release="none"
-ARG sbtag="none"
-ARG metadata="none"
+ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
+# Default tags
+ARG release="master"  
+ARG sbtag="Stable"
+ARG metadata="data"
 
 # Stage 1: build stage
 FROM $SOURCE_IMG AS builder
@@ -16,25 +18,19 @@ LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
 ARG METADATA_FILE
 ARG INSTALL_DIR
 ARG PROJECTS_DIR
+ARG ROBOTOLOGY_INITIALIZATION_FILE
 ARG release
 ARG sbtag
 ARG metadata
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 
 ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG BUILD_TYPE=Release
 ARG CMAKE_EXTRA_OPTIONS=-j4
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-#The EXPOSE instruction does not actually publish the port.
-#It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
-#To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
-EXPOSE 10000/tcp 10000/udp 
-#is necessary to expose port??
-
-# Some QT-Apps don't show controls without this
-ENV QT_X11_NO_MITSHM 1
-ENV YARP_COLORED_OUTPUT=1
 
 # Dependencies for gnuplot
 RUN apt update && \
@@ -58,18 +54,26 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
         # Build all the projects
         cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
+RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
 # Stage 2: scratch stage
 # This should theoretically help reducing the size of the final image
 FROM scratch
-COPY --from=secondstage / /
+COPY --from=builder / /
 
-ARG metadata
+#The EXPOSE instruction does not actually publish the port.
+#It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
+#To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the -P flag to publish all exposed ports and map them to high-order ports.
+EXPOSE 10000/tcp 10000/udp 
+#is necessary to expose port??
+
+# Some QT-Apps don't show controls without this
+ENV QT_X11_NO_MITSHM=1
+ENV YARP_COLORED_OUTPUT=1
+
 ARG METADATA_FILE
+ARG ROBOTOLOGY_INITIALIZATION_FILE
 
-ENV img_metadata=${metadata}
-
-RUN echo 'export img_metadata=${metadata}'  > $METADATA_FILE
-RUN echo 'echo 'This image was built on $metadata ' '  >> $METADATA_FILE
+RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]

@@ -21,7 +21,7 @@ jobs:
     debug:
       runs-on: [ubuntu-latest]
       steps: 
-      - id: get_data
+      - id: get_date
         run: |
           echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR_
           echo "metadata=$(cat DATE_HOUR_)" > DATE_HOUR_TAG

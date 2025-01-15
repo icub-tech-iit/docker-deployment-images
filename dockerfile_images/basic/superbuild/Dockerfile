@@ -1,12 +1,12 @@
 #start from image passed by argument during build process. Usually it is an ubuntu image plus mesa library.
 ARG START_IMG="none"
 
-ARG METADATA_FILE="/usr/local/bin/setup_metadata.sh"
+ARG METADATA_FILE=/usr/local/bin/setup_metadata.sh
 ARG PROJECTS_DIR=/projects
 ARG INSTALL_DIR=${PROJECTS_DIR}/robotology-superbuild/build/install
 ARG release="master"
 ARG sbtag="Stable"
-ARG METADATA_FILE=${INSTALL_DIR}/bin/setup_metadata.sh
+ARG metadata="data"
 ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
 
 FROM $START_IMG AS builder
@@ -80,25 +80,21 @@ RUN rm -rf ${PROJECTS_DIR}/robotology-superbuild/build/src &&\
 FROM $START_IMG  AS secondstage
 
 # Setup entrypoint
-ARG ROBOTOLOGY_INITIALIZATION_FILE
-
 ARG PROJECTS_DIR
-ARG METADATA_FILE
-ARG release
-ARG sbtag
-ARG metadata
+
 
 COPY --from=builder ${PROJECTS_DIR} ${PROJECTS_DIR}
 COPY --from=builder /usr /usr
 COPY --from=builder /etc /etc
 
-RUN echo 'export img_metadata=${metadata}'  > ${METADATA_FILE}  &&\
-    echo 'echo 'This images has release=$release and had been building with superbuild_tag=$sbtag. Metadata=$metadata' '  >> ${METADATA_FILE} &&\
-    echo "source ${METADATA_FILE}" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
-
 # This should theoretically help reducing the size of the final image
 FROM scratch
 
+# Setup entrypoint
+ARG ROBOTOLOGY_INITIALIZATION_FILE
+ARG METADATA_FILE
+ARG release
+ARG sbtag
 ARG metadata
 
 COPY --from=secondstage / /
@@ -112,7 +108,8 @@ EXPOSE 10000/tcp 10000/udp
 ENV QT_X11_NO_MITSHM=1
 ENV YARP_COLORED_OUTPUT=1
 
-ENV img_metadata=${metadata}
+RUN echo 'echo 'This images has release=$release and is built with superbuild_tag=$sbtag. Metadata=$metadata' '  >> ${METADATA_FILE} &&\
+    echo "source ${METADATA_FILE}" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
