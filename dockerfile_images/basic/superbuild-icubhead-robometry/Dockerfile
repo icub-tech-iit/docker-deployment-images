@@ -56,7 +56,6 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
         -DNON_INTERACTIVE_BUILD:BOOL=OFF \
         -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
         -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
-        -DYCM_EP_INSTALL_DIR=${INSTALL_DIR} \ 
         # for enabling robometry
         -DROBOTOLOGY_ENABLE_DYNAMICS:BOOL=ON \ 
         -DROBOTOLOGY_USES_GAZEBO=OFF \
