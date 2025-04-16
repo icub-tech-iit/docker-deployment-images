@@ -3,7 +3,7 @@ name: Devel
 on: 
     workflow_dispatch:
     schedule:
-    # Run the job once a week
+    # The job runs every two weeks
     - cron: '0 0 */14 * *'
     
 jobs:
