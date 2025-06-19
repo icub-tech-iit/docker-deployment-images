@@ -36,7 +36,7 @@ jobs:
           run: |
             if [[ "${{github.event_name}}" == "push" ]]
             then
-            parsed_list=($(find dockerfile_images/basic -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
+            parsed_list=($(find dockerfile_images -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
             fi
             superbuild_matrix=""
             children_matrix=""
