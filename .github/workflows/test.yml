@@ -34,10 +34,7 @@ jobs:
         - name: find app name
           id: set-matrix
           run: |
-            if [[ "${{github.event_name}}" == "push" ]]
-            then
-            parsed_list=($(find dockerfile_images -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
-            fi
+            parsed_list=($(find dockerfile_images/basic -mindepth 1 -maxdepth 1 -type d -printf "%f\n"))
             superbuild_matrix=""
             children_matrix=""
             superbuild_flag=false
