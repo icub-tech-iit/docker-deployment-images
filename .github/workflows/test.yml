@@ -31,26 +31,12 @@ jobs:
     check_files:
         runs-on: [ubuntu-latest]
         steps:
-        - id: file_changes
-          if: github.event_name == 'push'
-          uses: trilom/file-changes-action@v1.2.4
-        - name: files
-          if: github.event_name == 'push'
-          id: check-modifications
-          run: |
-            cat $HOME/files.json
-            cat $HOME/files_modified.json
-            cat $HOME/files_added.json
-            echo '${{ steps.file_changes.outputs.files}}'
-            echo '${{ steps.file_changes.outputs.files_modified}}'
-            echo '${{ steps.file_changes.outputs.files_added}}'
-        - uses: actions/checkout@v4
         - name: find app name
           id: set-matrix
           run: |
             if [[ "${{github.event_name}}" == "push" ]]
             then
-              parsed_list=($(echo '${{ steps.file_changes.outputs.files}}' | tr ',' '\n'))
+              parsed_list=("superbuild")
             fi
             superbuild_matrix=""
             children_matrix=""
