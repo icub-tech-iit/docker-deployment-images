@@ -16,6 +16,7 @@ env:
   DEFAULT_USER: defaultuser
   IMAGE_PREFIX: cd_
   SUPERBUILD_TAG: v2023.08.0
+  SKIP_BINARIES_IMAGES: "superbuild-ros2"
 
 jobs:
     debug:
@@ -485,6 +486,15 @@ jobs:
             echo "cmpl tag: $tag_arg"
             echo "demo matrix: ${demos_matrix[@]}"
 
+        - name: Set skip binaries flag
+          id: skip_binaries
+          run: |
+            if [[ " ${{ env.SKIP_BINARIES_IMAGES }} " =~ " ${{ matrix.apps }} " ]]; then
+              echo "skip_binaries=true" >> $GITHUB_OUTPUT
+            else
+              echo "skip_binaries=false" >> $GITHUB_OUTPUT
+            fi
+
         - name: Build Docker sources images
           id: build-sources
           if: steps.get_args.outputs.CMPL_SRC == 'true'
@@ -512,7 +522,7 @@ jobs:
 
         - name: Build Docker binaries images
           id: build-binaries
-          if: steps.get_args.outputs.CMPL_BIN == 'true'
+          if: steps.get_args.outputs.CMPL_BIN == 'true' && steps.skip_binaries.outputs.skip_binaries != 'true'
           run: docker build  ${{ steps.get_args.outputs.BIN_ARGS }} --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile4Production ${{ steps.get_args.outputs.TAG_ARGS }}_binaries" 
 
         - name: Tag binaries images for dockerhub
@@ -815,4 +825,4 @@ jobs:
             repository: ${{ env.REPOSITORY_NAME }}
             event-type: cron_trigger
             client-payload: '{"type": "cron_trigger", "img_list": "${{ needs.check_files.outputs.children_matrix }}"}'
-            
+
