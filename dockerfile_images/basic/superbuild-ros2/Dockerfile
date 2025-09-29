@@ -17,7 +17,7 @@ FROM $ROS_IMG AS ros_builder
 ENV ROS_DISTRO=humble
 ENV DEBIAN_FRONTEND=noninteractive
 
-LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it, martina.gloria@iit.it"
 
 ARG PROJECTS_DIR
 ARG INSTALL_DIR
@@ -31,30 +31,30 @@ COPY --from=superbuild_builder /usr/local/share /usr/local/share
 
 # Combined locale setup and initial package installations
 RUN apt update && \
-    apt install -y --no-install-recommends locales software-properties-common curl tar gzip build-essential && \
+    apt install -y --no-install-recommends \
+        locales \
+        software-properties-common \
+        curl \
+        tar \
+        gzip \
+        build-essential \
+        wget \
+        unzip && \
     locale-gen en_US en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
-    export LANG=en_US.UTF-8 && \
     add-apt-repository -y universe && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt update && \
-    apt install curl tar gzip build-essential -y && \
     export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') && \
     curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb" && \
-    apt update && \
     apt install -y /tmp/ros2-apt-source.deb && \
     rm /tmp/ros2-apt-source.deb && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt update && \
+    apt update && \
     apt install -y --no-install-recommends \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
     ros-humble-rmw-cyclonedds-cpp ros-humble-ament-cmake-clang-format ros-humble-hardware-interface ros-humble-controller-manager ros-humble-ros2-control \
-    ros-humble-ament-cmake \
-    wget \
-    unzip && \
+    ros-humble-ament-cmake && \
     rm -rf /var/lib/apt/lists/*
+
+
 
 # Second stage
 FROM $ROS_IMG AS secondstage
@@ -92,9 +92,9 @@ source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
 RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
     apt update &&\
     ./scripts/install_apt_dependencies.sh &&\
-    cd build &&\
-    bash -c "\
-    source /opt/ros/${ROS_DISTRO}/setup.bash &&\
+    rm -rf /var/lib/apt/lists/*
+RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
+    bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
     cmake .. \
         -G '${CMAKE_GENERATOR}' \
         -DCMAKE_PREFIX_PATH='/opt/ros/${ROS_DISTRO}:/projects/robotology-superbuild/build/install' \
@@ -103,7 +103,7 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
         -DROBOTOLOGY_USES_ROS2:BOOL=ON \
-        -DYCM_EP_DEVEL_MODE_yarp-devices-ros2:BOOL=OFF &&\
+        -DYCM_EP_DEVEL_MODE_yarp-devices-ros2:BOOL=OFF && \
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}"
 
 ENV QT_X11_NO_MITSHM=1 
