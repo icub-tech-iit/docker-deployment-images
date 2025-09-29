@@ -24,40 +24,39 @@ ARG INSTALL_DIR
 ARG ROBOTOLOGY_INITIALIZATION_FILE
 
 COPY --from=superbuild_builder ${PROJECTS_DIR} ${PROJECTS_DIR}
-COPY --from=superbuild_builder /usr/local /usr/local
+COPY --from=superbuild_builder /usr/local/bin /usr/local/bin
+COPY --from=superbuild_builder /usr/local/lib /usr/local/lib
+COPY --from=superbuild_builder /usr/local/include /usr/local/include
+COPY --from=superbuild_builder /usr/local/share /usr/local/share
 
-# Set locale
-RUN apt update &&\ 
-    apt install -y --no-install-recommends locales &&\
-    locale-gen en_US en_US.UTF-8 &&\
-    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 &&\
-    export LANG=en_US.UTF-8
+# Combined locale setup and initial package installations
+RUN apt update && \
+    apt install -y --no-install-recommends locales software-properties-common curl tar gzip build-essential && \
+    locale-gen en_US en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+    export LANG=en_US.UTF-8 && \
+    add-apt-repository -y universe && \
+    rm -rf /var/lib/apt/lists/*
 
-# Setup sources
-RUN apt update &&\
-    apt install -y software-properties-common
-    
-RUN apt update &&\
-    add-apt-repository -y universe
-# Install ros2-apt-source package
-RUN apt update &&\
-    apt install curl tar gzip build-essential -y 
-    
-RUN export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') &&\
-    curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb" &&\
-    apt update &&\
-    apt install -y /tmp/ros2-apt-source.deb
+RUN apt update && \
+    apt install curl tar gzip build-essential -y && \
+    export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') && \
+    curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb" && \
+    apt update && \
+    apt install -y /tmp/ros2-apt-source.deb && \
+    rm /tmp/ros2-apt-source.deb && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt update && apt install -y \
+RUN apt update && \
+    apt install -y --no-install-recommends \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
     ros-humble-rmw-cyclonedds-cpp ros-humble-ament-cmake-clang-format ros-humble-hardware-interface ros-humble-controller-manager ros-humble-ros2-control \
     ros-humble-ament-cmake \
     wget \
-    unzip 
+    unzip && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN echo 'source /opt/ros/${ROS_DISTRO}/setup.bash' >> ${ROBOTOLOGY_INITIALIZATION_FILE}
-
-
+# Second stage
 FROM $ROS_IMG AS secondstage
 
 ARG PROJECTS_DIR
@@ -81,9 +80,9 @@ COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 
 ENV AMENT_PREFIX_PATH=/opt/ros/${ROS_DISTRO}
 
-RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash" &&\
-    echo 'AMENT_PREFIX_PATH:' \$AMENT_PREFIX_PATH &&\
-    echo 'AMENT_CURRENT_PREFIX:' \$AMENT_CURRENT_PREFIX
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    echo 'AMENT_PREFIX_PATH:' \$AMENT_PREFIX_PATH && \
+    echo 'AMENT_CURRENT_PREFIX:' \$AMENT_CURRENT_PREFIX"
     
 # Add ros setup.bash to bashrc
 RUN echo "\n\
@@ -91,6 +90,7 @@ source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
 
 # Build the project
 RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
+    apt update &&\
     ./scripts/install_apt_dependencies.sh &&\
     cd build &&\
     bash -c "\
