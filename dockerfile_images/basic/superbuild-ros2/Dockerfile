@@ -98,7 +98,7 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
     cmake .. \
         -G '${CMAKE_GENERATOR}' \
         -DCMAKE_PREFIX_PATH='/opt/ros/${ROS_DISTRO}:/projects/robotology-superbuild/build/install' \
-        -DCMAKE_INSTALL_PREFIX='/usr/local:/opt/ros/${ROS_DISTRO}' \
+        -DCMAKE_INSTALL_PREFIX='/usr/local' \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
