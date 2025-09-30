@@ -15,6 +15,7 @@ FROM $START_IMG AS superbuild_builder
 FROM $ROS_IMG AS ros_builder
 
 ENV ROS_DISTRO=humble
+ENV ROS_APT_VERSION="unknown"
 ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it, martina.gloria@iit.it"
@@ -52,8 +53,8 @@ RUN apt update && \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
     ros-humble-rmw-cyclonedds-cpp ros-humble-ament-cmake-clang-format ros-humble-hardware-interface ros-humble-controller-manager ros-humble-ros2-control \
     ros-humble-ament-cmake && \
-    rm -rf /var/lib/apt/lists/*
-
+    rm -rf /var/lib/apt/lists/* && \
+    echo "ROS_APT_VERSION=${ROS_APT_SOURCE_VERSION}" >> /etc/environment
 
 
 # Second stage
@@ -109,9 +110,13 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
 ENV QT_X11_NO_MITSHM=1 
 ENV YARP_COLORED_OUTPUT=1
 
-RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
-RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >>  $ROBOTOLOGY_INITIALIZATION_FILE
+RUN bash -c "source /etc/environment &&\
+    echo 'echo 'This image has ROS distro=${ROS_DISTRO} and apt_release=v\$ROS_APT_VERSION'' >> ${METADATA_FILE}"
+
+RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >  $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source /etc/environment" >> $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source ${METADATA_FILE}" >>  $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >>  $ROBOTOLOGY_INITIALIZATION_FILE
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD ["bash"]
