@@ -8,37 +8,58 @@ ARG metadata="data"
 
 # Definitions
 ARG ROS_IMG=ros:humble-ros-base-jammy
-ARG ROS_DISTRO=humble
 ARG PROJECTS_DIR=/projects
 ARG INSTALL_DIR=${PROJECTS_DIR}/robotology-superbuild/build/install
 
 FROM $START_IMG AS superbuild_builder
 FROM $ROS_IMG AS ros_builder
 
+ENV ROS_DISTRO=humble
+ENV ROS_APT_VERSION="unknown"
 ENV DEBIAN_FRONTEND=noninteractive
 
-LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it"
+LABEL maintainer="valentina.gaggero@iit.it, jacopo.losi@iit.it, martina.gloria@iit.it"
 
-ARG ROS_DISTRO
 ARG PROJECTS_DIR
 ARG INSTALL_DIR
 ARG ROBOTOLOGY_INITIALIZATION_FILE
 
 COPY --from=superbuild_builder ${PROJECTS_DIR} ${PROJECTS_DIR}
-COPY --from=superbuild_builder /usr /usr
-COPY --from=superbuild_builder /etc /etc
+COPY --from=superbuild_builder /usr/local/bin /usr/local/bin
+COPY --from=superbuild_builder /usr/local/lib /usr/local/lib
+COPY --from=superbuild_builder /usr/local/include /usr/local/include
+COPY --from=superbuild_builder /usr/local/share /usr/local/share
 
-RUN apt update && apt install -y \
+# Combined locale setup and initial package installations
+RUN apt update && \
+    apt install -y --no-install-recommends \
+        locales \
+        software-properties-common \
+        curl \
+        tar \
+        gzip \
+        build-essential \
+        wget \
+        unzip && \
+    locale-gen en_US en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+    add-apt-repository -y universe && \
+    export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') && \
+    curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo $VERSION_CODENAME)_all.deb" && \
+    apt install -y /tmp/ros2-apt-source.deb && \
+    rm /tmp/ros2-apt-source.deb && \
+    apt update && \
+    apt install -y --no-install-recommends \
     ros-humble-rqt ros-humble-rqt-common-plugins ros-humble-test-msgs ros-humble-desktop ros-dev-tools \
     ros-humble-rmw-cyclonedds-cpp ros-humble-ament-cmake-clang-format ros-humble-hardware-interface ros-humble-controller-manager ros-humble-ros2-control \
-    wget \
-    unzip
-RUN echo 'source /opt/ros/${ROS_DISTRO}/setup.bash' >> ${ROBOTOLOGY_INITIALIZATION_FILE}
+    ros-humble-ament-cmake && \
+    rm -rf /var/lib/apt/lists/* && \
+    echo "ROS_APT_VERSION=${ROS_APT_SOURCE_VERSION}" >> /etc/environment
 
 
+# Second stage
 FROM $ROS_IMG AS secondstage
 
-ARG ROS_DISTRO
 ARG PROJECTS_DIR
 ARG INSTALL_DIR
 ARG METADATA_FILE
@@ -47,6 +68,7 @@ ARG release
 ARG sbtag
 ARG metadata
 
+# Copy all files from the first stage to have the same environment eliminating intermediate layers
 COPY --from=ros_builder / /
 
 ARG CMAKE_GENERATOR="Unix Makefiles"
@@ -57,32 +79,44 @@ ARG CMAKE_PREFIX_PATH=/usr/local
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY setup.sh ${ROBOTOLOGY_INITIALIZATION_FILE}
 
-RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash &&\
-    echo $AMENT_PREFIX_PATH &&\
-    echo $AMENT_CURRENT_PREFIX"
+ENV AMENT_PREFIX_PATH=/opt/ros/${ROS_DISTRO}
+
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    echo 'AMENT_PREFIX_PATH:' \$AMENT_PREFIX_PATH && \
+    echo 'AMENT_CURRENT_PREFIX:' \$AMENT_CURRENT_PREFIX"
     
+# Add ros setup.bash to bashrc
+RUN echo "\n\
+source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
+
+# Build the project
 RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
-    cd build &&\
+    apt update &&\
+    ./scripts/install_apt_dependencies.sh &&\
+    rm -rf /var/lib/apt/lists/*
+RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
+    bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
     cmake .. \
-    -G "$CMAKE_GENERATOR" \
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_PREFIX_PATH} \
+        -G '${CMAKE_GENERATOR}' \
+        -DCMAKE_PREFIX_PATH='/opt/ros/${ROS_DISTRO}:/projects/robotology-superbuild/build/install' \
+        -DCMAKE_INSTALL_PREFIX='/usr/local' \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        -DNON_INTERACTIVE_BUILD:BOOL=ON \
-        -DROBOTOLOGY_ENABLE_CORE:BOOL=ON \
-        -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=ON \
-        # for enabling yarp-devices-ros2
-        -DROBOTOLOGY_ENABLE_ROS2:BOOL=ON \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
-        &&\
-        # Build all the projects
-        cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
+        -DNON_INTERACTIVE_BUILD:BOOL=ON \
+        -DROBOTOLOGY_USES_ROS2:BOOL=ON \
+        -DYCM_EP_DEVEL_MODE_yarp-devices-ros2:BOOL=OFF && \
+    cmake --build . -- ${CMAKE_EXTRA_OPTIONS}"
 
 ENV QT_X11_NO_MITSHM=1 
 ENV YARP_COLORED_OUTPUT=1
 
-RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >>  $ROBOTOLOGY_INITIALIZATION_FILE
-RUN echo "source ${METADATA_FILE}" >> $ROBOTOLOGY_INITIALIZATION_FILE
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >>  $ROBOTOLOGY_INITIALIZATION_FILE
+RUN bash -c "source /etc/environment &&\
+    echo 'echo 'This image has ROS distro=${ROS_DISTRO} and apt_release=v\$ROS_APT_VERSION'' >> ${METADATA_FILE}"
+
+RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >  $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source /etc/environment" >> $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source ${METADATA_FILE}" >>  $ROBOTOLOGY_INITIALIZATION_FILE &&\
+    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >>  $ROBOTOLOGY_INITIALIZATION_FILE
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD ["bash"]
