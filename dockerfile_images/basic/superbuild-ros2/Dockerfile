@@ -102,7 +102,10 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
         -DCMAKE_INSTALL_PREFIX='/usr/local' \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
+        # Disable icub-head to avoid conflict with auto-generated files
+        -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=OFF \ 
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
+        # Enable ROS2 support
         -DROBOTOLOGY_USES_ROS2:BOOL=ON \
         -DYCM_EP_DEVEL_MODE_yarp-devices-ros2:BOOL=OFF && \
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}"
