@@ -102,7 +102,9 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild/build &&\
         -DCMAKE_INSTALL_PREFIX='/usr/local' \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DROBOTOLOGY_PROJECT_TAGS=${sbtag} \
-        # Disable icub-head to avoid conflict with auto-generated files
+        # Disable core and icub-head to avoid conflict with auto-generated files
+        # Cmake option tags can be checked at: https://github.com/robotology/robotology-superbuild/blob/master/doc/cmake-options.md#superbuild-cmake-options
+        -DROBOTOLOGY_ENABLE_CORE:BOOL=OFF \ 
         -DROBOTOLOGY_ENABLE_ICUB_HEAD:BOOL=OFF \ 
         -DNON_INTERACTIVE_BUILD:BOOL=ON \
         # Enable ROS2 support
