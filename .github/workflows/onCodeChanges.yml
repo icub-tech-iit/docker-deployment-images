@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR_
           echo "metadata=$(cat DATE_HOUR_)" > DATE_HOUR_TAG
-          echo $(cat DATE_HOUR_TAG)
+          echo "DATE_HOUR_TAG=$(cat DATE_HOUR_TAG)"
       - id: get_version
         run: |
           echo "I received the version: ${{ github.event.client_payload.version }}"
@@ -337,7 +337,7 @@ jobs:
           run: |
             echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR
             echo "metadata=$(cat DATE_HOUR)" > DATE_HOUR_TAG
-            echo $(cat DATE_HOUR_TAG) >> $GITHUB_OUTPUT
+            echo "DATE_HOUR_TAG=$(cat DATE_HOUR_TAG)" >> $GITHUB_OUTPUT
           
  ##################### Here we check the release version and replace Custom with stable only for the image name ######################
         - name: Get release / master version
@@ -396,6 +396,7 @@ jobs:
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_date.outputs.DATE_HOUR_TAG}}/${{steps.get_date.outputs.DATE_HOUR_TAG}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REGISTRY}}/${{env.REGISTRY}}/g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's@{{env.REPOSITORY_NAME}}@${{env.REPOSITORY_NAME}}@g' temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i 's/{{env.IMAGE_PREFIX}}/${{env.IMAGE_PREFIX}}/g' temp.tmp && cat temp.tmp)
