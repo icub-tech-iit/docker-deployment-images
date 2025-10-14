@@ -71,5 +71,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ env.REPOSITORY_NAME }}
           event-type: repository_trigger
-          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-icubhead superbuild-icubhead-withuser superbuild-gazebo superbuild-ros2"}'
+          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "type": "repository_trigger", "img_list": "superbuild superbuild-icubhead superbuild-icubhead-withuser superbuild-ros2"}'
           

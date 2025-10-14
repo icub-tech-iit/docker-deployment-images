@@ -20,4 +20,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           event-type: cron_trigger
-          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-icubhead superbuild-icubhead-withuser superbuild-gazebo superbuild-ros2"}'
+          client-payload: '{"version": "master", "type": "cron_trigger", "img_list": "superbuild superbuild-icubhead superbuild-icubhead-withuser superbuild-ros2"}'
