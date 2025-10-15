@@ -8,7 +8,7 @@ on:
     
 jobs:
   build:
-    name: build devel and master images
+    name: build master images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout docker-deployment-images

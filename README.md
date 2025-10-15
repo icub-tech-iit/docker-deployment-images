@@ -1,26 +1,45 @@
-## General info
-This repository contains all dockerfiles useful to build the docker images employed both for development purposes and for deploying applications.
+# General info
+This repository contains the Dockerfiles used to generate pre-configured images based on the [Robotology Superbuild](https://github.com/robotology/robotology-superbuild).
 
+The main goal is to significantly **accelerate development and testing cycles** by providing ready-to-use environments.
+
+---
+
+## Key Features
+
+* **Pre-built Images:** The resulting Docker images are available as packages under the **`icub-tech`** organization on GitHub.
+* **Automatic Updates:** Images are automatically rebuilt under the following conditions:
+    1.  Every two weeks (bi-weekly schedule).
+    2.  Immediately, whenever a Dockerfile in this repository is updated.
+* **Faster Iteration:** By using these images, developers can bypass lengthy compilation steps and focus directly on application logic and testing.
+
+## Contribution and Feedback
+
+**⚠️ This repository and its documentation are currently under active development.**
+
+Your feedback is highly valued!
+
+* **Bugs or Issues:** If you encounter any errors or problems, please **open a new Issue**. We are committed to resolving issues quickly.
+* **Documentation or Feature Requests:** If you require additional information in the documentation or need new features (e.g., new base images, different configurations), please **open an Issue** detailing your request.
+
+# Details
 
 ## Docker images structure
 
-Our docker images are included inside the folder [`dockerfile_images`](dockerfile_images), with the following structure:
+Our docker images are included inside the folder [`dockerfile_images/basic`](dockerfile_images/basic), with the following structure:
 ```
 master
      |_ docker-deployment-images
                                 |_ basic
                                         |_ superbuild
-                                        |_ ubuntu:focal
+                                        |_ superbuild-icubhead-robometry
                                         ...
-                                |_ demos
-                                        |_ blender
-                                        |_ funny-things
-                                        ...
+     |_ deprecated-images
 ```
 
 where
 - `basic`: contains images mostly used as base for more complex images
-- `demos`: contains more complex images related to specific applications
+- `deprecated-images`: Files in deprecated-images (e.g., grasp-the-ball) contain Dockerfiles for legacy applications. They are not maintained but can serve as inspirational templates for complex image configurations.
 
 :warning: **Important note**: the **name** of the image folder is important, as our [building pipeline](https://github.com/icub-tech-iit/docker-deployment-images/actions/workflows/devel.yml) uses it to **tag the image**. Thus it must be lower case, as docker does not support upper case in the image name.
 
@@ -50,16 +69,10 @@ START_IMG=ubuntu:focal
 [superbuild]
 
 [children]
-grasp-the-ball
-open-face
-supervise-calib
-superbuild-google
-funny-things
-superbuild-icubtest
+superbuild-ros2
 
 [demos]
-yarpBasicDeploy
-robotBaseStartup
+
 
 ```
 
@@ -77,7 +90,7 @@ START_IMG=ubuntu:focal
 {{matrix.apps}}:{{steps.get_version.outputs.VERSION}}
 
 [children]
-grasp-the-ball-gazebo
+superbuild-ros2
 ```
 
 The file contains the following sections:
@@ -95,7 +108,7 @@ In particular:
   - `{{steps.get_version.outputs.VERSION}}`: the corresponding variable is filled [here](https://github.com/icub-tech-iit/docker-deployment-images/blob/f9a4572c3eed1fb317a82f70774f4f3d2519aae7/.github/workflows/onCodeChanges.yml#LL344C32-L344C32) with the last release of code. We then replace the placeholder with the actual value [here](https://github.com/icub-tech-iit/docker-deployment-images/blob/f9a4572c3eed1fb317a82f70774f4f3d2519aae7/.github/workflows/onCodeChanges.yml#L396);
   - `{{steps.get_version.outputs.TAG}}`: the corresponding variable is filled [here](https://github.com/icub-tech-iit/docker-deployment-images/blob/f9a4572c3eed1fb317a82f70774f4f3d2519aae7/.github/workflows/onCodeChanges.yml#LL345C13-L350C15) with the project tag (e.g. `stable`, `unstable` or `empty`)
 
-Note: check [this](https://github.com/icub-tech-iit/code/tree/feat/doc/.github/workflows#naming-convention-for-docker-images) for more details on the image naming convention.
+Note: check [this](https://github.com/icub-tech-iit/docker-deployment-images/wiki/Docker-images#naming-convention-for-docker-images) for more details on the image naming convention.
 
 #### `[sources]` (optional)
 This indicates that the image will build a `_sources` image. This **should not be included** if a `Dockerfile` **is not provided**.
