@@ -126,8 +126,8 @@ jobs:
       - name: Get version and tag
         id: get_version
         run: |
-          echo "VERSION=master" >> $GITHUB_OUTPUT
-          echo "TAG=-stable" >> $GITHUB_OUTPUT
+          echo "VERSION=${{matrix.version}}" >> $GITHUB_OUTPUT
+          echo "TAG=$(echo -${{matrix.tag}} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Get date hour tag
         id: get_date
@@ -202,4 +202,4 @@ jobs:
           docker build ${{ steps.get_args.outputs.SRC_ARGS }} \
             --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} \
             --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile \
-            ${{ steps.get_args.outputs.TAG_ARGS }}
+            ${{ steps.get_args.outputs.TAG_ARGS }}_sources 
