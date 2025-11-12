@@ -75,6 +75,9 @@ jobs:
           if [[ ${#superbuild_elements[@]} -eq 0 ]] 
           then
             superbuild_elements+=("superbuild")
+            parsed_list+=("dockerfile_images/basic/superbuild/Dockerfile")
+            superbuild_flag=true
+            element_flag=true
           fi
           # Deduplicate superbuild_elements
           unique_superbuild_elements=($(printf "%s\n" "${superbuild_elements[@]}" | sort -u))
@@ -91,6 +94,12 @@ jobs:
           echo "superbuild_flag=$superbuild_flag" >> $GITHUB_OUTPUT
           echo "paths=${parsed_list[@]}" >> $GITHUB_OUTPUT
           echo "version=$version_matrix" >> $GITHUB_OUTPUT
+
+          # Check outputs
+          echo "Superbuild Matrix: $superbuild_matrix_json"
+          echo "Superbuild Flag: $superbuild_flag"
+          echo "Paths: ${parsed_list[@]}"
+          echo "Version Matrix: $version_matrix"
   
     outputs:
       superbuild_matrix: ${{ steps.set-matrix.outputs.superbuild_matrix }}
