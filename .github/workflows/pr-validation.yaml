@@ -70,6 +70,10 @@ jobs:
             fi
           done
 
+          # if the superbuild_elements is empty, add at least one standard element so we can always run the job
+          if [[ ${#superbuild_elements[@]} eq 0 ]]; then
+            superbuild_elements+=("superbuild")
+          fi
           # Deduplicate superbuild_elements
           unique_superbuild_elements=($(printf "%s\n" "${superbuild_elements[@]}" | sort -u))
           superbuild_matrix_json="["
