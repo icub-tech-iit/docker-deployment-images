@@ -336,7 +336,7 @@ jobs:
           id: get_date
           run: |
             echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR
-            echo "DATE_HOUR_TAG=$(cat DATE_HOUR_TAG)" >> $GITHUB_OUTPUT
+            echo "DATE_HOUR_TAG=$(cat DATE_HOUR)" >> $GITHUB_OUTPUT
           
  ##################### Here we check the release version and replace Custom with stable only for the image name ######################
         - name: Get release / master version
