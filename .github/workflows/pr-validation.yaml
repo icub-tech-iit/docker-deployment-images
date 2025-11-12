@@ -5,6 +5,7 @@ on:
     branches:
       - master
     paths:
+      - '**.yaml'
       - 'dockerfile_images/**'
 
 env:
