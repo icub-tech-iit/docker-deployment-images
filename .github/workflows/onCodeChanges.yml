@@ -409,7 +409,7 @@ jobs:
             do
               echo "line is $line"
               # write current line to temp file then apply safe substitutions using escaped vars
-              line=$(echo "$line" > temp.tmp && sed -i sed -i "s/{{matrix.tag}}/${VAL_MATRIX_TAG_ESC}/g" temp.tmp && cat temp.tmp)
+              line=$(echo "$line" > temp.tmp && sed -i "s/{{matrix.tag}}/${VAL_MATRIX_TAG_ESC}/g" temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i "s/{{steps.get_version.outputs.TAG}}/${VAL_STEPS_TAG_ESC}/g" temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i "s/{{matrix.version}}/${VAL_MATRIX_VERSION_ESC}/g" temp.tmp && cat temp.tmp)
               line=$(echo "$line" > temp.tmp && sed -i "s/{{matrix.apps}}/${VAL_MATRIX_APPS_ESC}/g" temp.tmp && cat temp.tmp)
