@@ -5,6 +5,7 @@ on:
     branches:
       - master
     paths:
+      - '**.yaml'
       - 'dockerfile_images/**'
 
 env:
@@ -70,6 +71,14 @@ jobs:
             fi
           done
 
+          # if the superbuild_elements is empty, add at least one standard element so we can always run the job
+          if [[ ${#superbuild_elements[@]} -eq 0 ]] 
+          then
+            superbuild_elements+=("superbuild")
+            parsed_list+=("dockerfile_images/basic/superbuild/Dockerfile")
+            superbuild_flag=true
+            element_flag=true
+          fi
           # Deduplicate superbuild_elements
           unique_superbuild_elements=($(printf "%s\n" "${superbuild_elements[@]}" | sort -u))
           superbuild_matrix_json="["
@@ -85,6 +94,12 @@ jobs:
           echo "superbuild_flag=$superbuild_flag" >> $GITHUB_OUTPUT
           echo "paths=${parsed_list[@]}" >> $GITHUB_OUTPUT
           echo "version=$version_matrix" >> $GITHUB_OUTPUT
+
+          # Check outputs
+          echo "Superbuild Matrix: $superbuild_matrix_json"
+          echo "Superbuild Flag: $superbuild_flag"
+          echo "Paths: ${parsed_list[@]}"
+          echo "Version Matrix: $version_matrix"
   
     outputs:
       superbuild_matrix: ${{ steps.set-matrix.outputs.superbuild_matrix }}
@@ -132,7 +147,7 @@ jobs:
       - name: Get date hour tag
         id: get_date
         run: |
-          echo "$(date +'%Y-%m-%d_%H:%M:%S')" > DATE_HOUR
+          echo "$(date +'%d/%m/%Y_%H:%M:%S')" > DATE_HOUR
           echo "DATE_HOUR_TAG=$( cat DATE_HOUR)" >> $GITHUB_OUTPUT
 
 
@@ -149,21 +164,60 @@ jobs:
           VERSION="${{ steps.get_version.outputs.VERSION }}"
           TAG="${{ steps.get_version.outputs.TAG }}"
 
+          # prepare and escape all replacement values (escape / and &)
+          escape() { printf '%s' "$1" | sed 's/[\/&]/\\&/g'; }
+
+          VAL_MATRIX_TAG="${{ matrix.tag }}"
+          VAL_MATRIX_TAG_ESC=$(escape "$VAL_MATRIX_TAG")
+
+          VAL_STEPS_TAG="${{ steps.get_version.outputs.TAG }}"
+          VAL_STEPS_TAG_ESC=$(escape "$VAL_STEPS_TAG")
+
+          VAL_MATRIX_VERSION="${{ matrix.version }}"
+          VAL_MATRIX_VERSION_ESC=$(escape "$VAL_MATRIX_VERSION")
+
+          VAL_MATRIX_APPS="${{ matrix.apps }}"
+          VAL_MATRIX_APPS_ESC=$(escape "$VAL_MATRIX_APPS")
+
+          VAL_STEPS_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          VAL_STEPS_VERSION_ESC=$(escape "$VAL_STEPS_VERSION")
+
+          VAL_DATE_TAG="${{ steps.get_date.outputs.DATE_HOUR_TAG }}"
+          VAL_DATE_TAG_ESC=$(escape "$VAL_DATE_TAG")
+
+          VAL_REGISTRY="${{ env.REGISTRY }}"
+          VAL_REGISTRY_ESC=$(escape "$VAL_REGISTRY")
+
+          VAL_REPO_NAME="${{ env.REPOSITORY_NAME }}"
+          VAL_REPO_NAME_ESC=$(escape "$VAL_REPO_NAME")
+
+          VAL_IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
+          VAL_IMAGE_PREFIX_ESC=$(escape "$VAL_IMAGE_PREFIX")
+
+          VAL_REPO_OWNER="${{ env.REPOSITORY_OWNER }}"
+          VAL_REPO_OWNER_ESC=$(escape "$VAL_REPO_OWNER")
+
+          VAL_DEFAULT_USER="${{ env.DEFAULT_USER }}"
+          VAL_DEFAULT_USER_ESC=$(escape "$VAL_DEFAULT_USER")
+
+          VAL_SUPERBUILD_TAG="${{ env.SUPERBUILD_TAG }}"
+          VAL_SUPERBUILD_TAG_ESC=$(escape "$VAL_SUPERBUILD_TAG")
+
           while read -r line || [ -n "$line" ]
           do
-            # Expand workflow and env variables in the line
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.tag}}/${{matrix.tag}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.TAG}}/${{steps.get_version.outputs.TAG}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.version}}/${{matrix.version}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{matrix.apps}}/${{matrix.apps}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_version.outputs.VERSION}}/${{steps.get_version.outputs.VERSION}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{steps.get_date.outputs.DATE_HOUR_TAG}}/${{steps.get_date.outputs.DATE_HOUR_TAG}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REGISTRY}}/${{env.REGISTRY}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's@{{env.REPOSITORY_NAME}}@${{env.REPOSITORY_NAME}}@g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{env.IMAGE_PREFIX}}/${{env.IMAGE_PREFIX}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{env.REPOSITORY_OWNER}}/${{env.REPOSITORY_OWNER}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{env.DEFAULT_USER}}/${{env.DEFAULT_USER}}/g' temp.tmp && cat temp.tmp)
-            line=$(echo "$line" > temp.tmp && sed -i 's/{{env.SUPERBUILD_TAG}}/${{env.SUPERBUILD_TAG}}/g' temp.tmp && cat temp.tmp)
+            # use escaped values (safe for sed)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{matrix.tag}}/${VAL_MATRIX_TAG_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{steps.get_version.outputs.TAG}}/${VAL_STEPS_TAG_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{matrix.version}}/${VAL_MATRIX_VERSION_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{matrix.apps}}/${VAL_MATRIX_APPS_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{steps.get_version.outputs.VERSION}}/${VAL_STEPS_VERSION_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{steps.get_date.outputs.DATE_HOUR_TAG}}/${VAL_DATE_TAG_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{env.REGISTRY}}/${VAL_REGISTRY_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s@{{env.REPOSITORY_NAME}}@${VAL_REPO_NAME_ESC}@g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{env.IMAGE_PREFIX}}/${VAL_IMAGE_PREFIX_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{env.REPOSITORY_OWNER}}/${VAL_REPO_OWNER_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{env.DEFAULT_USER}}/${VAL_DEFAULT_USER_ESC}/g" temp.tmp && cat temp.tmp)
+            line=$(printf '%s\n' "$line" > temp.tmp && sed -i "s/{{env.SUPERBUILD_TAG}}/${VAL_SUPERBUILD_TAG_ESC}/g" temp.tmp && cat temp.tmp)
 
             if [ "$line" == "[sources]" ]
             then
@@ -202,4 +256,4 @@ jobs:
           docker build ${{ steps.get_args.outputs.SRC_ARGS }} \
             --no-cache ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}} \
             --file ${{ steps.get_path.outputs.PATH }}/${{matrix.apps}}/Dockerfile \
-            ${{ steps.get_args.outputs.TAG_ARGS }}_sources 
+            ${{ steps.get_args.outputs.TAG_ARGS }}_sources
