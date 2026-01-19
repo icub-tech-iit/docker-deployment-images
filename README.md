@@ -138,3 +138,16 @@ This indicates that some images will depend on this image. Beneath this tag is a
 
 #### `[demos]` (optional)
 This indicates that some demos will depend on this image. Beneath this tag is a list of demos that will be tested when changes are done to this image.
+
+
+
+## Maintainers
+
+This repository is maintained by:
+
+| | |
+|:---:|:---:|
+| [<img src="https://github.com/valegagge.png" width="40">](https://github.com/valegagge) | [@valegagge](https://github.com/valegagge) |
+| [<img src="https://github.com/MSECode.png" width="40">](https://github.com/MSECode) | [@MSEcode](https://github.com/MSECode) |
+
+
